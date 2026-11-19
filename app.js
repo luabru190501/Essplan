@@ -174,6 +174,7 @@ async function connectSync() {
     const app = appMod.initializeApp(SYNC.firebase);
     const db = dbMod.getDatabase(app);
     sync = { mode: "connecting", db, api: dbMod, base: "haushalte/" + SYNC.haushalt + "/wochen" };
+    if (typeof putzConnect === "function") putzConnect();
     dbMod.onValue(dbMod.ref(db, ".info/connected"), s => { sync.mode = s.val() ? "online" : "offline"; renderSyncChip(); });
     let first = true;
     dbMod.onValue(dbMod.ref(db, sync.base), snap => {
@@ -401,6 +402,7 @@ function viewHeute() {
     ${hero}
     ${(() => { const rem = remindersToday(); return rem.length ? `<div class="card remind"><h3>Nicht vergessen</h3>${rem.map(x => `<div class="rem"><span class="dot"></span><span><b>${esc(x.text)}</b><br><span class="small muted">${esc(x.for)}</span>${x.shop ? `<br><button class="chip" style="margin-top:6px" data-go="einkauf" data-week="${x.shop}">Zur Einkaufsliste</button>` : ""}</span></div>`).join("")}</div>` : ""; })()}
     ${lunch}
+    ${typeof putzHeuteCard === "function" ? putzHeuteCard() : ""}
     ${tomorrow ? `<button class="pick" data-recipe="${tomorrow.id}" data-week="${w.id}">${art(tomorrow)}<span><span>Morgen</span><b>${esc(tomorrow.name)}</b></span><span class="muted small">${esc(tomorrow.time)}</span></button>` : ""}
     <div class="tiles">
       <button class="tile" data-go="einkauf" data-week="${shopWeek().id}"><span class="spread"><span><span class="small muted">${shopWeek() === w ? "Einkauf" : "Einkauf nächste Woche"}</span><b class="num">${ssm.done}/${ssm.all}</b></span>${ringSvg(pct)}</span><span class="small muted num">noch ${chf(ssm.open)}</span></button>
@@ -670,14 +672,14 @@ $("cookSpeak").onclick = () => {
 function activeWeek() { return weekById[ui.week] || currentWeek(); }
 function go(tab, weekId) {
   ui.tab = tab; if (weekId) ui.week = weekId;
-  const h = tab === "heute" ? "heute" : tab + "-" + activeWeek().id;
+  const h = tab === "heute" || tab === "haushalt" ? tab : tab + "-" + activeWeek().id;
   if (location.hash !== "#" + h) history.replaceState(null, "", "#" + h);
   render();
 }
 function readHash() {
   const h = decodeURIComponent(location.hash.slice(1));
   const m = /^(woche|gerichte|einkauf)(?:-(.+))?$/.exec(h);
-  if (m) { ui.tab = m[1]; if (m[2] && weekById[m[2]]) ui.week = m[2]; } else ui.tab = "heute";
+  if (m) { ui.tab = m[1]; if (m[2] && weekById[m[2]]) ui.week = m[2]; } else ui.tab = h === "haushalt" && typeof viewHaushalt === "function" ? "haushalt" : "heute";
 }
 window.addEventListener("hashchange", () => { readHash(); render(); });
 
@@ -686,7 +688,7 @@ function render(keepScroll = false) {
   if (!weeks.length) { v.innerHTML = `<div class="empty">Noch keine Wochendaten vorhanden.</div>`; return; }
   const y = window.scrollY;
   const w = activeWeek();
-  v.innerHTML = ui.tab === "woche" ? viewWoche(w) : ui.tab === "gerichte" ? viewGerichte(w) : ui.tab === "einkauf" ? viewEinkauf(w) : viewHeute();
+  v.innerHTML = ui.tab === "woche" ? viewWoche(w) : ui.tab === "gerichte" ? viewGerichte(w) : ui.tab === "einkauf" ? viewEinkauf(w) : ui.tab === "haushalt" && typeof viewHaushalt === "function" ? viewHaushalt() : viewHeute();
   document.querySelectorAll(".tabbar button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === ui.tab ? "page" : "false"));
   const sm = summary(ui.tab === "einkauf" ? w : shopWeek()), left = sm.all - sm.done, cnt = $("shopCount");
   cnt.hidden = !left; cnt.textContent = left;
@@ -795,9 +797,11 @@ $("sheet").addEventListener("click", e => {
   }
 });
 
-/* ---------- Start ---------- */
-loadLocal();
-readHash();
-render();
-connectSync();
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+/* ---------- Start (nach allen Skripten, damit auch haushalt.js geladen ist) ---------- */
+window.addEventListener("DOMContentLoaded", () => {
+  loadLocal();
+  readHash();
+  render();
+  connectSync();
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+});
