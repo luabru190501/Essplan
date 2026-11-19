@@ -99,6 +99,42 @@ const SPECIAL = {
 const isSpecial = v => Object.prototype.hasOwnProperty.call(SPECIAL, v);
 function specialArt(v, cls = "") { return `<div class="art art-special ${cls}" aria-hidden="true"><svg class="ico" viewBox="0 0 64 64">${SPECIAL[v].icon}</svg></div>`; }
 
+/* Mengen pro Schritt: Zutaten finden, die im Schritt vorkommen */
+function ingKeys(line) {
+  let t = line.replace(/\(.*?\)/g, " ").trim();
+  t = t.replace(/^[\d.,½¼¾⅓⅔\s–-]+/, "");
+  t = t.replace(/^(g|kg|ml|cl|dl|l|EL|TL|Prise[n]?|Dose[n]?|Bund|Stück|Knolle[n]?|Becher|Packung(en)?|Scheibe[n]?|Handvoll|Glas|Gläser)\b\.?\s*/i, "");
+  return t.split(/[\s,/]+/).map(w => w.replace(/[^A-Za-zÄÖÜäöüß-]/g, "")).filter(w => /^[A-ZÄÖÜ]/.test(w) && w.length >= 2).map(w => w.toLowerCase());
+}
+const SHORT_OK = ["öl", "ei"];
+function keyMatch(k, w) {
+  if (k === w) return true;
+  if (w.length < 4) return SHORT_OK.includes(w) && (k.endsWith(w) || (k.startsWith(w) && k.length - w.length <= 2));
+  if (k.length < 4) return false;
+  return k.startsWith(w) || k.endsWith(w) || w.startsWith(k) || (w.length >= 5 && k.includes(w));
+}
+const cleanIng = t => t.replace(/\s*\(([^)]{13,})\)/g, "").trim();
+function stepIngredientMap(r) {
+  const seen = new Set();
+  return r.steps.map(step => {
+    const words = step.toLowerCase().split(/[^a-zäöüß]+/).filter(w => w.length >= 2);
+    const out = [];
+    r.ingredients.forEach((line, li) => {
+      if (seen.has(li)) return;
+      if (ingKeys(line).some(k => words.some(w => keyMatch(k, w)))) { seen.add(li); out.push(li); }
+    });
+    return out;
+  });
+}
+function stepIngredients(r, i, f) {
+  if (!r._stepMap) r._stepMap = stepIngredientMap(r);
+  return (r._stepMap[i] || []).map(li => cleanIng(scaleText(r.ingredients[li], f)));
+}
+function recipeFactor(w, r) {
+  const s = wstate(w), days = DAYS.filter(([k]) => s.sel[k] === r.id).map(d => d[0]);
+  return (days.length ? porOf(s, days[0]) : (ui.tmpPor[r.id] || PORTIONS)) / PORTIONS;
+}
+
 /* ---------- Hilfen ---------- */
 const $ = id => document.getElementById(id);
 const chf = n => "CHF " + n.toFixed(2);
@@ -576,7 +612,7 @@ function recipeSheet(w, r) {
       <div class="section"><h3>An welchem Tag?</h3>
         <div class="daypick">${DAYS.map(([k, sh]) => `<button data-assign="${k}" aria-pressed="${days.includes(k)}" aria-label="${sh}">${sh}</button>`).join("")}</div></div>
       <div class="section"><h3>Zutaten</h3><ul class="ing">${r.ingredients.map((x, i) => `<li data-ing="${i}" class="${ui.ingDone[r.id + i] ? "done" : ""}">${esc(scaleText(x, f))}</li>`).join("")}</ul></div>
-      <div class="section"><h3>Zubereitung</h3><ol class="steps">${r.steps.map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>
+      <div class="section"><h3>Zubereitung</h3><ol class="steps">${r.steps.map((x, i) => { const si = stepIngredients(r, i, f); return `<li><span>${esc(x)}${si.length ? `<span class="stepings">${si.map(t => `<span>${esc(t)}</span>`).join("")}</span>` : ""}</span></li>`; }).join("")}</ol></div>
     </div>
     <div class="sticky-cta"><button class="btn primary block" data-cookrecipe="${r.id}">Schritt für Schritt kochen</button></div>`;
 }
@@ -606,7 +642,7 @@ function syncSheet() {
 let cook = null, wakeLock = null, timer = null;
 function openCookRecipe(w, r) {
   closeSheet();
-  cook = { r, i: 0 };
+  cook = { r, i: 0, f: recipeFactor(w, r) };
   $("cookTitle").textContent = r.name;
   const s = wstate(w), days = DAYS.filter(([k]) => s.sel[k] === r.id).map(d => d[0]);
   const f = (days.length ? porOf(s, days[0]) : (ui.tmpPor[r.id] || PORTIONS)) / PORTIONS;
@@ -622,6 +658,8 @@ function drawCook() {
   $("cookSegs").innerHTML = r.steps.map((_, j) => `<i class="${j <= i ? "on" : ""}"></i>`).join("");
   $("cookNum").textContent = String(i + 1).padStart(2, "0") + " / " + String(r.steps.length).padStart(2, "0");
   $("cookStep").textContent = r.steps[i];
+  const si = stepIngredients(r, i, cook.f || 1), box = $("cookStepIng");
+  if (box) { box.hidden = !si.length; box.innerHTML = si.length ? `<span class="eyebrow">Dafür brauchst du</span>${si.map(t => `<span class="cing">${esc(t)}</span>`).join("")}` : ""; }
   $("cookPrev").disabled = i === 0;
   $("cookNext").textContent = i === r.steps.length - 1 ? "Fertig, en Guete!" : "Weiter";
   if (store.speak) say(`Schritt ${i + 1}. ${r.steps[i]}`);

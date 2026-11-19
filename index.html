@@ -573,6 +573,13 @@ main { gap: 22px; }
 .whochip { border: 0; background: none; cursor: pointer; display: inline-flex; gap: 2px; padding: 0; }
 .nobody { font-size: 12px; color: var(--muted); border: 1px dashed var(--line); border-radius: 999px; padding: 2px 8px; }
 .late { color: var(--tomato); font-weight: 600; }
+
+/* Mengen pro Schritt */
+.stepings { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.stepings span { font-size: 13.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink); }
+.cook-ing-step { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.cing { font-size: 20px; font-family: var(--font-display); line-height: 1.25; }
+.cing::before { content: "· "; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -596,6 +603,7 @@ main { gap: 22px; }
   <div class="cook-main">
     <div class="cook-num num" id="cookNum"></div>
     <div class="cook-step" id="cookStep"></div>
+    <div class="cook-ing-step" id="cookStepIng" hidden></div>
     <button class="timer" id="cookTimer" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg><span id="cookTimerTxt"></span></button>
     <details class="cook-ing"><summary>Zutaten anzeigen</summary><ul id="cookIng"></ul></details>
   </div>
