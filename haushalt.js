@@ -135,7 +135,7 @@ function putzUpcoming(days = 7) {
 }
 
 /* ---------- Ansicht ---------- */
-const avatarColor = i => i === 0 ? "var(--tomato)" : "var(--ocean)";
+const avatarColor = i => i === 0 ? "var(--tomato)" : "var(--ocean)"; /* Ton und Nebelblau */
 function avatar(i, size = 30) {
   const n = P.settings.names[i] || "?";
   return `<span class="avatar" style="background:${avatarColor(i)};width:${size}px;height:${size}px;font-size:${Math.round(size * 0.45)}px">${esc(n.charAt(0).toUpperCase())}</span>`;

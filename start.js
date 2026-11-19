@@ -25,22 +25,22 @@ function sceneSvg() {
   const h = new Date().getHours();
   const phase = h >= 6 && h < 10 ? "morgen" : h >= 10 && h < 17 ? "tag" : h >= 17 && h < 21 ? "abend" : "nacht";
   const sky = {
-    morgen: ["#f9d9b8", "#bfdcef"], tag: ["#cfe8f7", "#7fb8de"], abend: ["#f6b26b", "#8d5a97"], nacht: ["#1b2a49", "#0c1428"]
+    morgen: ["#f1dcc6", "#d3dde2"], tag: ["#e6ebe8", "#b9cad3"], abend: ["#e3b896", "#8f7d8c"], nacht: ["#2b3142", "#171b26"]
   }[phase];
-  const hill1 = phase === "nacht" ? "#24402f" : phase === "abend" ? "#4f7d4a" : "#7fb36a";
-  const hill2 = phase === "nacht" ? "#1a3123" : phase === "abend" ? "#3d6a3c" : "#5f9a52";
+  const hill1 = phase === "nacht" ? "#2c3530" : phase === "abend" ? "#6f7d66" : "#a3b097";
+  const hill2 = phase === "nacht" ? "#222a26" : phase === "abend" ? "#5d6a57" : "#8a9a80";
   const lit = phase === "abend" || phase === "nacht";
-  const win = lit ? "#ffd27a" : "#cfe6f5";
+  const win = lit ? "#f2cf8f" : "#d9e0e2";
   const stars = phase === "nacht" ? Array.from({ length: 28 }, (_, i) => {
     const x = (i * 97) % 390, y = (i * 53) % 120 + 8, r = (i % 3) * 0.5 + 0.8;
     return `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${0.4 + (i % 4) * 0.15}"/>`;
   }).join("") : "";
   const sun = phase === "nacht" ? `<circle cx="318" cy="62" r="22" fill="#f4efd8"/><circle cx="328" cy="55" r="20" fill="${sky[0]}"/>`
-    : phase === "abend" ? `<circle cx="300" cy="150" r="34" fill="#ffcf7a" opacity=".9"/>`
-    : phase === "morgen" ? `<circle cx="70" cy="110" r="28" fill="#ffe2a8"/>`
-    : `<circle cx="320" cy="58" r="26" fill="#fff3c4"/><circle cx="320" cy="58" r="40" fill="#fff3c4" opacity=".25"/>`;
+    : phase === "abend" ? `<circle cx="300" cy="150" r="32" fill="#f1cfa0" opacity=".9"/>`
+    : phase === "morgen" ? `<circle cx="70" cy="110" r="26" fill="#f6e2c2"/>`
+    : `<circle cx="320" cy="58" r="24" fill="#f6efdc"/>`;
   const clouds = phase === "nacht" ? "" : `<g fill="#fff" opacity="${phase === "abend" ? 0.35 : 0.8}"><ellipse cx="110" cy="62" rx="34" ry="11"/><ellipse cx="132" cy="54" rx="22" ry="12"/><ellipse cx="236" cy="96" rx="26" ry="8"/><ellipse cx="252" cy="90" rx="16" ry="9"/></g>`;
-  const glow = lit ? `<circle cx="160" cy="210" r="46" fill="#ffd27a" opacity=".18"/><circle cx="232" cy="210" r="46" fill="#ffd27a" opacity=".18"/>` : "";
+  const glow = lit ? `<circle cx="160" cy="210" r="40" fill="#f2cf8f" opacity=".14"/><circle cx="232" cy="210" r="40" fill="#f2cf8f" opacity=".14"/>` : "";
   return `<svg class="scene" viewBox="0 0 390 420" preserveAspectRatio="xMidYMin slice" role="img" aria-label="Ein kleines Haus auf einem Hügel">
     <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[1]}"/><stop offset="1" stop-color="${sky[0]}"/></linearGradient></defs>
     <rect width="390" height="420" fill="url(#sky)"/>${stars}${sun}${clouds}<g transform="translate(0,-34)">
@@ -48,21 +48,21 @@ function sceneSvg() {
     <path d="M0 262 C90 236 170 246 230 256 S340 240 390 250 V460 H0Z" fill="${hill1}"/>
     ${glow}
     <g>
-      <rect x="138" y="178" width="118" height="84" rx="4" fill="#f6efe1"/>
-      <path d="M126 184 L197 128 L268 184 Z" fill="#c8462c"/>
-      <path d="M126 184 L197 128 L268 184" fill="none" stroke="#9f3420" stroke-width="4" stroke-linejoin="round"/>
-      <rect x="226" y="134" width="14" height="32" fill="#9f3420"/>
+      <rect x="138" y="178" width="118" height="84" rx="4" fill="#f4eee3"/>
+      <path d="M126 184 L197 128 L268 184 Z" fill="#a8684e"/>
+      <path d="M126 184 L197 128 L268 184" fill="none" stroke="#8d543e" stroke-width="4" stroke-linejoin="round"/>
+      <rect x="226" y="134" width="14" height="32" fill="#8d543e"/>
       ${phase === "nacht" || phase === "abend" ? "" : `<g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"><path d="M233 126c-6-6 6-10 0-16"/><path d="M240 112c-5-5 5-9 0-14"/></g>`}
       ${phase === "abend" || phase === "nacht" ? `<g fill="none" stroke="#e8e0d0" stroke-width="3" stroke-linecap="round" opacity=".5"><path d="M233 126c-6-6 6-10 0-16"/></g>` : ""}
       <rect x="150" y="196" width="26" height="24" rx="3" fill="${win}"/><path d="M163 196v24M150 208h26" stroke="#f6efe1" stroke-width="2.5"/>
       <rect x="218" y="196" width="26" height="24" rx="3" fill="${win}"/><path d="M231 196v24M218 208h26" stroke="#f6efe1" stroke-width="2.5"/>
-      <rect x="186" y="220" width="22" height="42" rx="11" fill="#2f6b46"/><circle cx="203" cy="242" r="1.8" fill="#e3a21a"/>
+      <rect x="186" y="220" width="22" height="42" rx="11" fill="#5f7a62"/><circle cx="203" cy="242" r="1.8" fill="#d4b77f"/>
       <circle cx="197" cy="160" r="9" fill="${win}"/>
     </g>
-    <path d="M197 262 C190 290 214 320 192 360 H218 C238 320 206 290 210 262Z" fill="#e9dcc2" opacity=".85"/>
-    <g><rect x="76" y="214" width="6" height="40" fill="#6b4a2f"/><circle cx="79" cy="206" r="24" fill="${phase === "nacht" ? "#2b5238" : "#3f8a5a"}"/><circle cx="66" cy="214" r="15" fill="${phase === "nacht" ? "#24452f" : "#357a4d"}"/></g>
-    <g><rect x="312" y="224" width="5" height="32" fill="#6b4a2f"/><circle cx="314" cy="216" r="18" fill="${phase === "nacht" ? "#2b5238" : "#4b9663"}"/></g>
-    <g fill="${phase === "nacht" ? "#e8a0a0" : "#f08a6f"}"><circle cx="140" cy="262" r="4"/><circle cx="150" cy="265" r="3.5"/><circle cx="250" cy="263" r="4"/><circle cx="242" cy="266" r="3"/></g>
+    <path d="M197 262 C190 290 214 320 192 360 H218 C238 320 206 290 210 262Z" fill="#ece3d2" opacity=".7"/>
+    <g><rect x="76" y="214" width="5" height="40" fill="#7a6553"/><circle cx="79" cy="206" r="24" fill="${phase === "nacht" ? "#36433a" : "#6f8a6c"}"/><circle cx="66" cy="214" r="15" fill="${phase === "nacht" ? "#2e3a32" : "#62805f"}"/></g>
+    <g><rect x="312" y="224" width="4" height="32" fill="#7a6553"/><circle cx="314" cy="216" r="18" fill="${phase === "nacht" ? "#36433a" : "#7a9475"}"/></g>
+    <g fill="${phase === "nacht" ? "#b8908a" : "#c99584"}"><circle cx="140" cy="262" r="4"/><circle cx="150" cy="265" r="3.5"/><circle cx="250" cy="263" r="4"/><circle cx="242" cy="266" r="3"/></g>
     </g>
   </svg>`;
 }
