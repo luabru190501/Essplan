@@ -135,7 +135,7 @@ function dateOf(w, dayKey) { return addDays(parseDate(w.start), DAYKEYS.indexOf(
 /* ---------- Zustand ---------- */
 const LS_KEY = "essplan-v3";
 let store = { weeks: {}, hideDone: false, seenWeeks: {}, speak: false };
-let ui = { area: "essen", tab: "heute", week: null, filter: "alle", query: "", ingDone: {}, tmpPor: {} };
+let ui = { area: "start", tab: "start", week: null, filter: "alle", query: "", ingDone: {}, tmpPor: {} };
 const porOf = (s, k) => (s.por && s.por[k]) || PORTIONS;
 
 function wstate(w) {
@@ -176,6 +176,7 @@ async function connectSync() {
     sync = { mode: "connecting", db, api: dbMod, base: "haushalte/" + SYNC.haushalt + "/wochen" };
     if (typeof putzConnect === "function") putzConnect();
     if (typeof kalConnect === "function") kalConnect();
+    if (typeof startConnect === "function") startConnect();
     dbMod.onValue(dbMod.ref(db, ".info/connected"), s => { sync.mode = s.val() ? "online" : "offline"; renderSyncChip(); });
     let first = true;
     dbMod.onValue(dbMod.ref(db, sync.base), snap => {
@@ -677,7 +678,7 @@ function go(tab, weekId) {
   if (tab === "essen") tab = ESSEN_TABS.includes(ui.tab) ? ui.tab : "heute";
   ui.area = ESSEN_TABS.includes(tab) ? "essen" : tab;
   ui.tab = tab; if (weekId) ui.week = weekId;
-  const h = ["heute", "haushalt", "kalender"].includes(tab) ? tab : tab + "-" + activeWeek().id;
+  const h = tab === "start" ? "zuhause" : ["heute", "haushalt", "kalender"].includes(tab) ? tab : tab + "-" + activeWeek().id;
   if (location.hash !== "#" + h) history.replaceState(null, "", "#" + h);
   render();
 }
@@ -687,7 +688,8 @@ function readHash() {
   if (m) { ui.tab = m[1]; if (m[2] && weekById[m[2]]) ui.week = m[2]; }
   else if (h === "haushalt" && typeof viewHaushalt === "function") ui.tab = "haushalt";
   else if (h === "kalender" && typeof viewKalender === "function") ui.tab = "kalender";
-  else ui.tab = "heute";
+  else if (h === "heute") ui.tab = "heute";
+  else ui.tab = typeof viewStart === "function" ? "start" : "heute";
   ui.area = ESSEN_TABS.includes(ui.tab) ? "essen" : ui.tab;
 }
 window.addEventListener("hashchange", () => { readHash(); render(); });
@@ -702,7 +704,8 @@ function render(keepScroll = false) {
     return `<nav class="seg" aria-label="Essen">${[["heute", "Heute"], ["woche", "Woche"], ["gerichte", "Gerichte"], ["einkauf", "Einkauf"]].map(([k, l]) =>
       `<button data-go="${k}" ${k === "einkauf" ? `data-week="${shopWeek().id}"` : ""} aria-current="${ui.tab === k ? "page" : "false"}">${l}${k === "einkauf" && left ? `<span class="count num">${left}</span>` : ""}</button>`).join("")}</nav>`;
   };
-  v.innerHTML = ui.area === "haushalt" && typeof viewHaushalt === "function" ? viewHaushalt()
+  v.innerHTML = ui.area === "start" && typeof viewStart === "function" ? viewStart()
+    : ui.area === "haushalt" && typeof viewHaushalt === "function" ? viewHaushalt()
     : ui.area === "kalender" && typeof viewKalender === "function" ? viewKalender()
     : essenNav() + (ui.tab === "woche" ? viewWoche(w) : ui.tab === "gerichte" ? viewGerichte(w) : ui.tab === "einkauf" ? viewEinkauf(w) : viewHeute());
   document.querySelectorAll(".tabbar button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === ui.area ? "page" : "false"));
