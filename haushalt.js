@@ -185,7 +185,7 @@ function viewHaushalt() {
     <p class="footer">${putzTasks().filter(t => !t.off).length} Aufgaben aktiv · ${P.settings.baths || 1} ${(P.settings.baths || 1) === 1 ? "Bad" : "Bäder"}</p>`;
 }
 function putzHeuteCard() {
-  if (putzMe === null) return `<button class="tile" data-go="haushalt" style="grid-column:span 2"><span class="small muted">Haushalt</span><b>Putzplan einrichten</b><span class="small muted">Sag der App, wer du bist</span></button>`;
+  if (putzMe === null) return `<button class="pick" data-go="haushalt">${roomArt("wohnung")}<span><span>Haushalt</span><b>Putzplan einrichten</b></span><span class="muted small">Wer bist du? ›</span></button>`;
   const open = putzToday().filter(x => !x.done), mine = open.filter(x => x.to === putzMe);
   return `<button class="pick" data-go="haushalt">${roomArt(mine[0] ? mine[0].t.room : "wohnung")}<span><span>Haushalt heute</span><b>${mine.length ? esc(mine[0].t.name) + (mine.length > 1 ? ` +${mine.length - 1}` : "") : open.length ? "Für dich nichts, " + open.length + " für " + esc(P.settings.names[1 - putzMe]) : "Alles erledigt"}</b></span><span class="muted small">${mine.reduce((a, x) => a + x.t.min, 0) || ""}${mine.length ? " Min." : ""}</span></button>`;
 }
