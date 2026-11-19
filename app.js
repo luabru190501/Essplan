@@ -125,6 +125,11 @@ const statusLabel = w => ({ current: "Diese Woche", next: "Nächste Woche", past
 function currentWeek() {
   return weeks.find(w => weekStatus(w) === "current") || weeks.filter(w => weekStatus(w) === "next").slice(-1)[0] || weeks[0];
 }
+function shopWeek() {
+  const cur = currentWeek(), nxt = weeks.find(x => weekStatus(x) === "next" && x !== cur);
+  const di = (new Date().getDay() + 6) % 7; /* 0 = Mo */
+  return nxt && di >= 3 ? nxt : cur;
+}
 function dateOf(w, dayKey) { return addDays(parseDate(w.start), DAYKEYS.indexOf(dayKey)); }
 
 /* ---------- Zustand ---------- */
@@ -331,6 +336,11 @@ function moodPanel(w) {
 
 function remindersToday() {
   const t = todayDate().getTime(), out = [];
+  const sw = shopWeek();
+  if (new Date().getDay() === 6 && sw !== currentWeek()) {
+    const sm = summary(sw);
+    if (sm.done < sm.all) out.push({ text: "Heute Grosseinkauf für nächste Woche", for: `${sm.all - sm.done} Dinge · ca. ${chf(sm.open)} · Migros-Aktionen gelten bis Mittwoch`, shop: sw.id });
+  }
   for (const w of weeks) {
     const s = wstate(w);
     for (const [k, , l] of DAYS) {
@@ -380,7 +390,8 @@ function viewHeute() {
     }).join("")}</div></div>` : "";
 
   const banner = nxt ? `<button class="banner" data-go="gerichte" data-week="${nxt.id}"><span class="spark">${nxt.recipes.length}</span><span><b>Neue Gerichte für nächste Woche</b><span class="small">Ab ${dm(parseDate(nxt.start))} · jetzt aussuchen</span></span><span class="go" aria-hidden="true">›</span></button>` : "";
-  const pct = sm.all ? sm.done / sm.all : 0;
+  const ssm = summary(shopWeek());
+  const pct = ssm.all ? ssm.done / ssm.all : 0;
   const d = new Date();
   const wunsch = "https://github.com/luabru190501/Essplan/issues/new?title=" + encodeURIComponent("Wunsch für nächste Woche") + "&body=" + encodeURIComponent("Schreib hier deinen Wunsch, z. B. «mehr Curry», «weniger Pasta», «Lieblingsgericht: …». Dann unten auf «Create» tippen.");
 
@@ -388,11 +399,11 @@ function viewHeute() {
     <div class="top"><div><span class="eyebrow">${DAYS[dayIndex(d)][2]}, ${d.getDate()}. ${MONTHS[d.getMonth()]}</span><h1>${greeting()}!</h1></div>${syncChipHtml()}</div>
     ${banner}
     ${hero}
-    ${(() => { const rem = remindersToday(); return rem.length ? `<div class="card remind"><h3>Nicht vergessen</h3>${rem.map(x => `<div class="rem"><span class="dot"></span><span><b>${esc(x.text)}</b><br><span class="small muted">${esc(x.for)}</span></span></div>`).join("")}</div>` : ""; })()}
+    ${(() => { const rem = remindersToday(); return rem.length ? `<div class="card remind"><h3>Nicht vergessen</h3>${rem.map(x => `<div class="rem"><span class="dot"></span><span><b>${esc(x.text)}</b><br><span class="small muted">${esc(x.for)}</span>${x.shop ? `<br><button class="chip" style="margin-top:6px" data-go="einkauf" data-week="${x.shop}">Zur Einkaufsliste</button>` : ""}</span></div>`).join("")}</div>` : ""; })()}
     ${lunch}
     ${tomorrow ? `<button class="pick" data-recipe="${tomorrow.id}" data-week="${w.id}">${art(tomorrow)}<span><span>Morgen</span><b>${esc(tomorrow.name)}</b></span><span class="muted small">${esc(tomorrow.time)}</span></button>` : ""}
     <div class="tiles">
-      <button class="tile" data-go="einkauf" data-week="${w.id}"><span class="spread"><span><span class="small muted">Einkauf</span><b class="num">${sm.done}/${sm.all}</b></span>${ringSvg(pct)}</span><span class="small muted num">noch ${chf(sm.open)}</span></button>
+      <button class="tile" data-go="einkauf" data-week="${shopWeek().id}"><span class="spread"><span><span class="small muted">${shopWeek() === w ? "Einkauf" : "Einkauf nächste Woche"}</span><b class="num">${ssm.done}/${ssm.all}</b></span>${ringSvg(pct)}</span><span class="small muted num">noch ${chf(ssm.open)}</span></button>
       <button class="tile" data-go="woche" data-week="${w.id}"><span class="small muted">Woche total</span><b class="num">${chf(sm.total)}</b><span class="small muted num">${sm.portions ? chf(sm.total / sm.portions) : "–"} pro Portion</span></button>
     </div>
     ${strip}
@@ -677,7 +688,7 @@ function render(keepScroll = false) {
   const w = activeWeek();
   v.innerHTML = ui.tab === "woche" ? viewWoche(w) : ui.tab === "gerichte" ? viewGerichte(w) : ui.tab === "einkauf" ? viewEinkauf(w) : viewHeute();
   document.querySelectorAll(".tabbar button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === ui.tab ? "page" : "false"));
-  const sm = summary(ui.tab === "heute" ? currentWeek() : w), left = sm.all - sm.done, cnt = $("shopCount");
+  const sm = summary(ui.tab === "einkauf" ? w : shopWeek()), left = sm.all - sm.done, cnt = $("shopCount");
   cnt.hidden = !left; cnt.textContent = left;
   if (keepScroll) window.scrollTo(0, y); else window.scrollTo(0, 0);
   const wk = v.querySelector('.wk[aria-pressed="true"]'); if (wk && wk.scrollIntoView) wk.scrollIntoView({ inline: "center", block: "nearest" });
@@ -688,7 +699,7 @@ function render(keepScroll = false) {
 /* ---------- Ereignisse ---------- */
 document.querySelector(".tabbar").addEventListener("click", e => {
   const b = e.target.closest("button[data-tab]"); if (!b) return;
-  go(b.dataset.tab);
+  go(b.dataset.tab, b.dataset.tab === "einkauf" ? shopWeek().id : (b.dataset.tab === "heute" ? null : (ui.week || currentWeek().id)));
 });
 $("scrim").addEventListener("click", closeSheet);
 document.addEventListener("keydown", e => {

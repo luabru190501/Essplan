@@ -1,5 +1,5 @@
 /* Macht die App offline nutzbar. Immer zuerst frisch aus dem Internet, sonst aus dem Speicher. */
-const CACHE = "essplan-v4";
+const CACHE = "essplan-v5";
 const FILES = ["./", "index.html", "app.js", "daten.js", "sync-config.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
