@@ -135,7 +135,7 @@ function dateOf(w, dayKey) { return addDays(parseDate(w.start), DAYKEYS.indexOf(
 /* ---------- Zustand ---------- */
 const LS_KEY = "essplan-v3";
 let store = { weeks: {}, hideDone: false, seenWeeks: {}, speak: false };
-let ui = { tab: "heute", week: null, filter: "alle", query: "", ingDone: {}, tmpPor: {} };
+let ui = { area: "essen", tab: "heute", week: null, filter: "alle", query: "", ingDone: {}, tmpPor: {} };
 const porOf = (s, k) => (s.por && s.por[k]) || PORTIONS;
 
 function wstate(w) {
@@ -175,6 +175,7 @@ async function connectSync() {
     const db = dbMod.getDatabase(app);
     sync = { mode: "connecting", db, api: dbMod, base: "haushalte/" + SYNC.haushalt + "/wochen" };
     if (typeof putzConnect === "function") putzConnect();
+    if (typeof kalConnect === "function") kalConnect();
     dbMod.onValue(dbMod.ref(db, ".info/connected"), s => { sync.mode = s.val() ? "online" : "offline"; renderSyncChip(); });
     let first = true;
     dbMod.onValue(dbMod.ref(db, sync.base), snap => {
@@ -402,6 +403,7 @@ function viewHeute() {
     ${hero}
     ${(() => { const rem = remindersToday(); return rem.length ? `<div class="card remind"><h3>Nicht vergessen</h3>${rem.map(x => `<div class="rem"><span class="dot"></span><span><b>${esc(x.text)}</b><br><span class="small muted">${esc(x.for)}</span>${x.shop ? `<br><button class="chip" style="margin-top:6px" data-go="einkauf" data-week="${x.shop}">Zur Einkaufsliste</button>` : ""}</span></div>`).join("")}</div>` : ""; })()}
     ${lunch}
+    ${typeof kalHeuteCard === "function" ? kalHeuteCard() : ""}
     ${typeof putzHeuteCard === "function" ? putzHeuteCard() : ""}
     ${tomorrow ? `<button class="pick" data-recipe="${tomorrow.id}" data-week="${w.id}">${art(tomorrow)}<span><span>Morgen</span><b>${esc(tomorrow.name)}</b></span><span class="muted small">${esc(tomorrow.time)}</span></button>` : ""}
     <div class="tiles">
@@ -670,16 +672,23 @@ $("cookSpeak").onclick = () => {
 
 /* ---------- Navigation ---------- */
 function activeWeek() { return weekById[ui.week] || currentWeek(); }
+const ESSEN_TABS = ["heute", "woche", "gerichte", "einkauf"];
 function go(tab, weekId) {
+  if (tab === "essen") tab = ESSEN_TABS.includes(ui.tab) ? ui.tab : "heute";
+  ui.area = ESSEN_TABS.includes(tab) ? "essen" : tab;
   ui.tab = tab; if (weekId) ui.week = weekId;
-  const h = tab === "heute" || tab === "haushalt" ? tab : tab + "-" + activeWeek().id;
+  const h = ["heute", "haushalt", "kalender"].includes(tab) ? tab : tab + "-" + activeWeek().id;
   if (location.hash !== "#" + h) history.replaceState(null, "", "#" + h);
   render();
 }
 function readHash() {
   const h = decodeURIComponent(location.hash.slice(1));
   const m = /^(woche|gerichte|einkauf)(?:-(.+))?$/.exec(h);
-  if (m) { ui.tab = m[1]; if (m[2] && weekById[m[2]]) ui.week = m[2]; } else ui.tab = h === "haushalt" && typeof viewHaushalt === "function" ? "haushalt" : "heute";
+  if (m) { ui.tab = m[1]; if (m[2] && weekById[m[2]]) ui.week = m[2]; }
+  else if (h === "haushalt" && typeof viewHaushalt === "function") ui.tab = "haushalt";
+  else if (h === "kalender" && typeof viewKalender === "function") ui.tab = "kalender";
+  else ui.tab = "heute";
+  ui.area = ESSEN_TABS.includes(ui.tab) ? "essen" : ui.tab;
 }
 window.addEventListener("hashchange", () => { readHash(); render(); });
 
@@ -688,10 +697,19 @@ function render(keepScroll = false) {
   if (!weeks.length) { v.innerHTML = `<div class="empty">Noch keine Wochendaten vorhanden.</div>`; return; }
   const y = window.scrollY;
   const w = activeWeek();
-  v.innerHTML = ui.tab === "woche" ? viewWoche(w) : ui.tab === "gerichte" ? viewGerichte(w) : ui.tab === "einkauf" ? viewEinkauf(w) : ui.tab === "haushalt" && typeof viewHaushalt === "function" ? viewHaushalt() : viewHeute();
-  document.querySelectorAll(".tabbar button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === ui.tab ? "page" : "false"));
-  const sm = summary(ui.tab === "einkauf" ? w : shopWeek()), left = sm.all - sm.done, cnt = $("shopCount");
-  cnt.hidden = !left; cnt.textContent = left;
+  const essenNav = () => {
+    const ssm = summary(shopWeek()), left = ssm.all - ssm.done;
+    return `<nav class="seg" aria-label="Essen">${[["heute", "Heute"], ["woche", "Woche"], ["gerichte", "Gerichte"], ["einkauf", "Einkauf"]].map(([k, l]) =>
+      `<button data-go="${k}" ${k === "einkauf" ? `data-week="${shopWeek().id}"` : ""} aria-current="${ui.tab === k ? "page" : "false"}">${l}${k === "einkauf" && left ? `<span class="count num">${left}</span>` : ""}</button>`).join("")}</nav>`;
+  };
+  v.innerHTML = ui.area === "haushalt" && typeof viewHaushalt === "function" ? viewHaushalt()
+    : ui.area === "kalender" && typeof viewKalender === "function" ? viewKalender()
+    : essenNav() + (ui.tab === "woche" ? viewWoche(w) : ui.tab === "gerichte" ? viewGerichte(w) : ui.tab === "einkauf" ? viewEinkauf(w) : viewHeute());
+  document.querySelectorAll(".tabbar button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === ui.area ? "page" : "false"));
+  const cnt = $("tabCountHaushalt");
+  if (cnt && typeof putzToday === "function" && putzMe !== null) { const n = putzToday().filter(x => !x.done && x.to === putzMe).length; cnt.hidden = !n; cnt.textContent = n; }
+  const kc = $("tabCountKalender");
+  if (kc && typeof eventsOn === "function") { const n = eventsOn(iso(todayDate())).length; kc.hidden = !n; kc.textContent = n; }
   if (keepScroll) window.scrollTo(0, y); else window.scrollTo(0, 0);
   const wk = v.querySelector('.wk[aria-pressed="true"]'); if (wk && wk.scrollIntoView) wk.scrollIntoView({ inline: "center", block: "nearest" });
   if (keepScroll) window.scrollTo(0, y);
@@ -701,7 +719,7 @@ function render(keepScroll = false) {
 /* ---------- Ereignisse ---------- */
 document.querySelector(".tabbar").addEventListener("click", e => {
   const b = e.target.closest("button[data-tab]"); if (!b) return;
-  go(b.dataset.tab, b.dataset.tab === "einkauf" ? shopWeek().id : (b.dataset.tab === "heute" ? null : (ui.week || currentWeek().id)));
+  go(b.dataset.tab);
 });
 $("scrim").addEventListener("click", closeSheet);
 document.addEventListener("keydown", e => {
