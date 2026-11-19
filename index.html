@@ -100,6 +100,7 @@ main { max-width: 640px; margin: 0 auto; padding: calc(12px + env(safe-area-inse
 .art-saffron { background: linear-gradient(140deg, #eab03a, #c47e10); }
 .art-ocean { background: linear-gradient(140deg, #3d86a8, #22536c); }
 .art-plum { background: linear-gradient(140deg, #8a5a8f, #5e3a63); }
+.art-special { background: var(--surface-2); color: var(--muted); }
 
 /* Heute */
 .hero { border-radius: 28px; overflow: hidden; box-shadow: var(--shadow); background: var(--surface); }
@@ -288,6 +289,20 @@ main { max-width: 640px; margin: 0 auto; padding: calc(12px + env(safe-area-inse
 .cook-ing summary { cursor: pointer; font-weight: 700; color: var(--basil); }
 .cook-ing ul { margin: 8px 0 0; padding-left: 20px; }
 .footer { font-size: 12.5px; color: var(--muted); text-align: center; }
+.subhead { padding: 8px 16px 6px; font-size: 12px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); }
+.havebtn { display: block; margin: 6px 0 0 auto; border: 0; background: var(--surface-2); border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.haveitem { cursor: default; }
+.haveitem .name, .haveitem .info { opacity: .6; }
+.porbadge { background: var(--saffron-soft); color: var(--ink); border-radius: 999px; padding: 0 8px; font-weight: 700; }
+.stepper { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--surface); box-shadow: var(--shadow); border-radius: var(--r-md); padding: 12px 14px; }
+.stepper button { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--surface-2); font-size: 22px; font-weight: 700; cursor: pointer; }
+.stepper b.num { font-family: var(--font-display); font-size: 22px; min-width: 28px; text-align: center; }
+.remind { background: var(--tomato-soft); box-shadow: none; }
+.rem { display: flex; gap: 12px; align-items: flex-start; }
+.rem .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--tomato); margin-top: 7px; flex: none; }
+.speak { display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--surface-2); border-radius: 999px; padding: 8px 12px; font-weight: 700; font-size: 14px; cursor: pointer; }
+.speak svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.speak[aria-pressed="true"] { background: var(--basil); color: var(--surface); }
 .empty { text-align: center; padding: 30px 10px; color: var(--muted); }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
@@ -311,7 +326,7 @@ main { max-width: 640px; margin: 0 auto; padding: calc(12px + env(safe-area-inse
 <section class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="Details"></section>
 
 <div class="cook" id="cook" hidden role="dialog" aria-modal="true" aria-labelledby="cookTitle">
-  <div class="cook-top"><h2 id="cookTitle"></h2><button class="close" id="cookClose" aria-label="Kochmodus schliessen">×</button></div>
+  <div class="cook-top"><h2 id="cookTitle"></h2><button class="speak" id="cookSpeak" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg><span id="cookSpeakTxt">Vorlesen</span></button><button class="close" id="cookClose" aria-label="Kochmodus schliessen">×</button></div>
   <div class="segs" id="cookSegs" aria-hidden="true"></div>
   <div class="cook-main">
     <div class="cook-num num" id="cookNum"></div>

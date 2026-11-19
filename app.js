@@ -64,6 +64,41 @@ function art(r, cls = "") {
   return `<div class="art art-${artColor(r)} ${cls}" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><svg class="ico" viewBox="0 0 64 64">${ART[artKind(r)]}</svg></div>`;
 }
 
+const CATS = [["gemuese", "Gemüse & Früchte"], ["brot", "Brot"], ["fleisch", "Fleisch & Fisch"], ["kuehl", "Kühlregal"], ["vorrat", "Vorrat"], ["tk", "Tiefkühler"], ["andere", "Weiteres"]];
+const CAT_ORDER = Object.fromEntries(CATS.map((c, i) => [c[0], i]));
+function catOf(p) {
+  if (p.cat && p.cat in CAT_ORDER) return p.cat;
+  const n = (p.name + " " + p.label).toLowerCase();
+  if (/tiefgekühlt|tk\b|tiefkühl/.test(n)) return "tk";
+  if (/poulet|rind|lachs|fisch|crevette|hack|geschnetzelt|steak/.test(n)) return "fleisch";
+  if (/brot|bürli|zopf|baguette/.test(n)) return "brot";
+  if (/käse|gruyère|mozzarella|tofu|eier|milch|joghurt|rahm|quark|butter|gnocchi|frisch/.test(n)) return "kuehl";
+  if (/dose|reis|penne|pasta|nudel|linsen|bohnen|kichererbsen|mehl|polenta|couscous/.test(n)) return "vorrat";
+  if (/kabis|lauch|karotte|zwiebel|knoblauch|ingwer|zitrone|aubergine|kartoffel|tomate|salat|peterli|kräuter|zucchetti|peperoni|pilz|spinat|apfel|birne|orange|broccoli|blumenkohl|kürbis|fenchel|sellerie/.test(n)) return "gemuese";
+  return "andere";
+}
+const FRAC = { "½": 0.5, "¼": 0.25, "¾": 0.75, "⅓": 1 / 3, "⅔": 2 / 3 };
+function fmtQty(v) {
+  if (v >= 10) return String(Math.round(v));
+  const q = Math.round(v * 4) / 4, whole = Math.floor(q), fr = { 0.25: "¼", 0.5: "½", 0.75: "¾" }[+(q - whole).toFixed(2)] || "";
+  return whole ? whole + fr : (fr || "¼");
+}
+function scaleText(t, f) {
+  if (Math.abs(f - 1) < 1e-9) return t;
+  const m = /^(\d+(?:[.,]\d+)?)?\s*([½¼¾⅓⅔])?/.exec(t);
+  if (!m || (!m[1] && !m[2])) return t;
+  const v = (m[1] ? parseFloat(m[1].replace(",", ".")) : 0) + (m[2] ? FRAC[m[2]] : 0);
+  return fmtQty(v * f) + " " + t.slice(m[0].length).trimStart();
+}
+
+/* Besondere Tage: kein Kochen, nichts einkaufen */
+const SPECIAL = {
+  __aus: { name: "Auswärts essen", sub: "Restaurant, Freunde, Familie", icon: '<path d="M14 8v24M10 8v10a4 4 0 0 0 8 0V8M14 32v24"/><path d="M46 8c-5 3-7 9-7 18h7v30"/><circle cx="30" cy="34" r="0"/>' },
+  __rest: { name: "Reste essen", sub: "Was noch im Kühlschrank ist", icon: '<rect x="10" y="20" width="44" height="30" rx="6"/><path d="M18 20v-4a4 4 0 0 1 4-4h20a4 4 0 0 1 4 4v4M10 32h44"/>' }
+};
+const isSpecial = v => Object.prototype.hasOwnProperty.call(SPECIAL, v);
+function specialArt(v, cls = "") { return `<div class="art art-special ${cls}" aria-hidden="true"><svg class="ico" viewBox="0 0 64 64">${SPECIAL[v].icon}</svg></div>`; }
+
 /* ---------- Hilfen ---------- */
 const $ = id => document.getElementById(id);
 const chf = n => "CHF " + n.toFixed(2);
@@ -94,14 +129,17 @@ function dateOf(w, dayKey) { return addDays(parseDate(w.start), DAYKEYS.indexOf(
 
 /* ---------- Zustand ---------- */
 const LS_KEY = "essplan-v3";
-let store = { weeks: {}, hideDone: false, seenWeeks: {} };
-let ui = { tab: "heute", week: null, filter: "alle", query: "", ingDone: {} };
+let store = { weeks: {}, hideDone: false, seenWeeks: {}, speak: false };
+let ui = { tab: "heute", week: null, filter: "alle", query: "", ingDone: {}, tmpPor: {} };
+const porOf = (s, k) => (s.por && s.por[k]) || PORTIONS;
 
 function wstate(w) {
   let s = store.weeks[w.id];
-  if (!s) s = store.weeks[w.id] = { sel: { ...w.defaultSel }, checked: {}, moods: [] };
+  if (!s) s = store.weeks[w.id] = { sel: { ...w.defaultSel }, checked: {}, moods: [], have: {}, por: {} };
+  if (!s.have || typeof s.have !== "object") s.have = {};
+  if (!s.por || typeof s.por !== "object") s.por = {};
   if (!s.sel || typeof s.sel !== "object") s.sel = {};
-  for (const k of DAYKEYS) if (!(k in s.sel) || (s.sel[k] !== "" && !w.byId[s.sel[k]])) s.sel[k] = w.defaultSel[k] || "";
+  for (const k of DAYKEYS) if (!(k in s.sel) || (s.sel[k] !== "" && !isSpecial(s.sel[k]) && !w.byId[s.sel[k]])) s.sel[k] = w.defaultSel[k] || "";
   if (!Array.isArray(s.moods)) s.moods = s.moods && typeof s.moods === "object" ? Object.keys(s.moods) : [];
   if (!s.checked || typeof s.checked !== "object") s.checked = {};
   return s;
@@ -110,7 +148,7 @@ function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(store))
 function loadLocal() {
   try {
     const s = JSON.parse(localStorage.getItem(LS_KEY) || "null");
-    if (s && s.weeks) { store = { weeks: s.weeks, hideDone: !!s.hideDone, seenWeeks: s.seenWeeks || {} }; return; }
+    if (s && s.weeks) { store = { weeks: s.weeks, hideDone: !!s.hideDone, seenWeeks: s.seenWeeks || {}, speak: !!s.speak }; return; }
     const v2 = JSON.parse(localStorage.getItem("essplan-v2") || "null");
     if (v2 && v2.weeks) for (const [id, x] of Object.entries(v2.weeks)) {
       const checked = {}; for (const k of Object.keys(x.checked || {})) checked[enc(k)] = true;
@@ -140,7 +178,9 @@ async function connectSync() {
         store.weeks[id] = {
           sel: r.sel || {},
           checked: r.checked || {},
-          moods: r.moods ? Object.keys(r.moods) : []
+          moods: r.moods ? Object.keys(r.moods) : [],
+          have: r.have || {},
+          por: r.por || {}
         };
       }
       if (first) {
@@ -154,7 +194,7 @@ async function connectSync() {
 }
 function remoteWeek(id) {
   const s = store.weeks[id];
-  return { sel: s.sel, checked: s.checked, moods: Object.fromEntries((s.moods || []).map(m => [m, true])) };
+  return { sel: s.sel, checked: s.checked, have: s.have || {}, por: s.por || {}, moods: Object.fromEntries((s.moods || []).map(m => [m, true])) };
 }
 function pushWeek(id) {
   if (!sync.api) return;
@@ -181,25 +221,29 @@ function selectedDays(w) {
 function shoppingList(w) {
   const s = wstate(w), need = {}, usedBy = {}, pantry = {};
   for (const d of selectedDays(w)) {
-    for (const [k, q] of recipeItems(d.recipe, s.sel)) { need[k] = (need[k] || 0) + q; (usedBy[k] = usedBy[k] || new Set()).add(d.short); }
+    const f = porOf(s, d.key) / PORTIONS;
+    for (const [k, q] of recipeItems(d.recipe, s.sel)) { need[k] = (need[k] || 0) + q * f; (usedBy[k] = usedBy[k] || new Set()).add(d.short); }
     for (const x of d.recipe.pantry || []) (pantry[x] = pantry[x] || new Set()).add(d.short);
   }
   const rows = Object.keys(need).map(k => {
     const p = w.products[k], packs = Math.max(1, Math.ceil(need[k] / p.pack - 1e-9));
-    return { key: enc(k), p, need: need[k], packs, cost: packs * p.price, statt: p.statt ? packs * p.statt : null, days: [...usedBy[k]] };
+    return { key: enc(k), p, cat: catOf(p), need: need[k], packs, cost: packs * p.price, statt: p.statt ? packs * p.statt : null, days: [...usedBy[k]], have: !!s.have[enc(k)] };
   });
   const pant = Object.keys(pantry).sort((a, b) => a.localeCompare(b, "de")).map(n => ({ key: enc("p:" + n), name: n, days: [...pantry[n]] }));
   return { rows, pantry: pant };
 }
 function summary(w) {
   const s = wstate(w), list = shoppingList(w), days = selectedDays(w);
-  const total = list.rows.reduce((a, r) => a + r.cost, 0);
-  const saved = list.rows.reduce((a, r) => a + (r.statt ? r.statt - r.cost : 0), 0);
-  const all = list.rows.length + list.pantry.length;
-  const done = list.rows.filter(r => s.checked[r.key]).length + list.pantry.filter(p => s.checked[p.key]).length;
-  const open = list.rows.filter(r => !s.checked[r.key]).reduce((a, r) => a + r.cost, 0);
+  const buy = list.rows.filter(r => !r.have);
+  const total = buy.reduce((a, r) => a + r.cost, 0);
+  const saved = buy.reduce((a, r) => a + (r.statt ? r.statt - r.cost : 0), 0);
+  const all = buy.length + list.pantry.length;
+  const done = buy.filter(r => s.checked[r.key]).length + list.pantry.filter(p => s.checked[p.key]).length;
+  const open = buy.filter(r => !s.checked[r.key]).reduce((a, r) => a + r.cost, 0);
+  const withK = days.filter(d => d.recipe.kcal);
   return {
-    list, days, total, saved, all, done, open, portions: days.length * PORTIONS,
+    list, days, total, saved, all, done, open, portions: days.reduce((a, d) => a + porOf(s, d.key), 0),
+    kcal: withK.length ? withK.reduce((a, d) => a + d.recipe.kcal, 0) / withK.length : 0,
     prot: days.length ? days.reduce((a, d) => a + (d.recipe.protein || 0), 0) / days.length : 0,
     fish: days.filter(d => d.recipe.tags.includes("fisch")).length,
     vegi: days.filter(d => d.recipe.tags.includes("vegetarisch")).length
@@ -215,8 +259,11 @@ function needText(row) {
 }
 
 /* ---------- Plan nach Lust ---------- */
-function planByMood(w, moods) {
-  if (!moods.length) return { ...w.defaultSel };
+function planByMood(w, moods, keep = {}) {
+  const blocked = Object.keys(keep);
+  if (!moods.length && !blocked.length) return { ...w.defaultSel };
+  if (!moods.length) { const sel = { ...w.defaultSel }; for (const k of blocked) sel[k] = keep[k]; return sel; }
+  const slots = DAYKEYS.filter(k => !blocked.includes(k));
   const rs = w.recipes;
   const range = f => { const v = rs.map(f); const lo = Math.min(...v), hi = Math.max(...v); return r => hi > lo ? (f(r) - lo) / (hi - lo) : 0.5; };
   const cN = range(r => perPortion(w, r)), pN = range(r => r.protein || 0), tN = range(r => r.minutes || 30);
@@ -241,15 +288,17 @@ function planByMood(w, moods) {
     return true;
   };
   let progress = true;
-  while (chosen.length < 7 && progress) {
+  while (chosen.length < slots.length && progress) {
     progress = false;
     for (const r of sorted) if (ok(r)) { chosen.push(r); progress = true; break; }
   }
-  const sel = Object.fromEntries(DAYKEYS.map(k => [k, ""]));
+  const sel = Object.fromEntries(DAYKEYS.map(k => [k, keep[k] || ""]));
+  const wkEnd = ["sa", "so"].filter(k => slots.includes(k));
   const longs = chosen.filter(r => r.minutes > LONG).sort((a, b) => (a.needs ? 1 : 0) - (b.needs ? 1 : 0));
-  longs.forEach((r, i) => { sel[["sa", "so"][i]] = r.id; });
-  const free = [...WEEKDAYS, ...["sa", "so"].filter(d => !sel[d])];
-  chosen.filter(r => r.minutes <= LONG).forEach((r, i) => { if (free[i]) sel[free[i]] = r.id; });
+  const rest = chosen.filter(r => r.minutes <= LONG);
+  longs.forEach((r, i) => { if (wkEnd[i]) sel[wkEnd[i]] = r.id; else rest.push(r); });
+  const free = [...WEEKDAYS.filter(k => slots.includes(k)), ...wkEnd.filter(d => !sel[d])];
+  rest.forEach((r, i) => { if (free[i]) sel[free[i]] = r.id; });
   return sel;
 }
 
@@ -280,6 +329,21 @@ function moodPanel(w) {
     <div class="toast" id="toast" aria-live="polite"></div></div>`;
 }
 
+function remindersToday() {
+  const t = todayDate().getTime(), out = [];
+  for (const w of weeks) {
+    const s = wstate(w);
+    for (const [k, , l] of DAYS) {
+      const r = w.byId[s.sel[k]];
+      if (!r || !Array.isArray(r.prep)) continue;
+      for (const p of r.prep) {
+        if (addDays(dateOf(w, k), -(p.daysBefore || 0)).getTime() === t) out.push({ text: p.text, for: (p.daysBefore ? l + ": " : "Heute: ") + r.name });
+      }
+    }
+  }
+  return out;
+}
+
 /* ---------- Heute ---------- */
 function viewHeute() {
   const w = currentWeek(), s = wstate(w), sm = summary(w), st = weekStatus(w);
@@ -294,10 +358,13 @@ function viewHeute() {
   let hero;
   if (st !== "current") {
     hero = `<div class="hero">${art(w.byId[w.defaultSel.mo])}<div class="hero-body"><span class="eyebrow">Als Nächstes</span><h2>Woche ab ${dm(parseDate(w.start))}</h2><div class="btns"><button class="btn primary" data-go="woche" data-week="${w.id}">Plan ansehen</button></div></div></div>`;
+  } else if (st === "current" && isSpecial(s.sel[tk])) {
+    const sp = SPECIAL[s.sel[tk]];
+    hero = `<div class="hero">${specialArt(s.sel[tk])}<div class="hero-body"><span class="eyebrow">Heute</span><h2>${sp.name}</h2><p class="muted">${sp.sub}. Heute müsst ihr nichts kochen.</p><div class="btns"><button class="btn soft" data-swap="${tk}" data-week="${w.id}">Doch kochen</button></div></div></div>`;
   } else if (r) {
     hero = `<div class="hero">${art(r)}<div class="hero-body">
       <span class="eyebrow">Heute auf dem Tisch</span><h2>${esc(r.name)}</h2>
-      <div class="facts"><span class="fact">${esc(r.time)}</span>${r.protein ? `<span class="fact">${r.protein} g Protein</span>` : ""}<span class="fact num">${chf(perPortion(w, r, s.sel))} / Portion</span></div>
+      <div class="facts"><span class="fact">${esc(r.time)}</span>${r.kcal ? `<span class="fact">${r.kcal} kcal</span>` : ""}${r.protein ? `<span class="fact">${r.protein} g Protein</span>` : ""}<span class="fact num">${chf(perPortion(w, r, s.sel))} / Portion</span></div>
       <div class="btns"><button class="btn primary" data-cook="${tk}" data-week="${w.id}">Jetzt kochen</button><button class="btn soft" data-recipe="${r.id}" data-week="${w.id}">Rezept</button></div></div></div>`;
   } else {
     hero = `<div class="hero">${art(null)}<div class="hero-body"><span class="eyebrow">Heute</span><h2>Heute ist kochfrei</h2><p class="muted">Lust auf etwas? Wähle ein Gericht für heute.</p><div class="btns"><button class="btn primary" data-swap="${tk}" data-week="${w.id}">Gericht wählen</button></div></div></div>`;
@@ -308,8 +375,8 @@ function viewHeute() {
 
   const strip = st === "current" || st === "next" ? `<div class="section"><div class="section-head"><h2>Diese Woche</h2><button class="chip" data-go="woche" data-week="${w.id}">Alle Tage</button></div>
     <div class="strip">${DAYS.map(([k, sh]) => {
-      const x = w.byId[s.sel[k]], isT = st === "current" && k === tk;
-      return `<button class="daychip${isT ? " today" : ""}${x ? "" : " free"}" ${x ? `data-recipe="${x.id}"` : `data-swap="${k}"`} data-week="${w.id}">${art(x)}<b>${sh} ${dm(dateOf(w, k))}</b><span>${x ? esc(x.name) : "frei"}</span></button>`;
+      const x = w.byId[s.sel[k]], isT = st === "current" && k === tk, sp = isSpecial(s.sel[k]) ? s.sel[k] : null;
+      return `<button class="daychip${isT ? " today" : ""}${x ? "" : " free"}" ${x ? `data-recipe="${x.id}"` : `data-swap="${k}"`} data-week="${w.id}">${sp ? specialArt(sp) : art(x)}<b>${sh} ${dm(dateOf(w, k))}</b><span>${x ? esc(x.name) : sp ? SPECIAL[sp].name : "frei"}</span></button>`;
     }).join("")}</div></div>` : "";
 
   const banner = nxt ? `<button class="banner" data-go="gerichte" data-week="${nxt.id}"><span class="spark">${nxt.recipes.length}</span><span><b>Neue Gerichte für nächste Woche</b><span class="small">Ab ${dm(parseDate(nxt.start))} · jetzt aussuchen</span></span><span class="go" aria-hidden="true">›</span></button>` : "";
@@ -321,6 +388,7 @@ function viewHeute() {
     <div class="top"><div><span class="eyebrow">${DAYS[dayIndex(d)][2]}, ${d.getDate()}. ${MONTHS[d.getMonth()]}</span><h1>${greeting()}!</h1></div>${syncChipHtml()}</div>
     ${banner}
     ${hero}
+    ${(() => { const rem = remindersToday(); return rem.length ? `<div class="card remind"><h3>Nicht vergessen</h3>${rem.map(x => `<div class="rem"><span class="dot"></span><span><b>${esc(x.text)}</b><br><span class="small muted">${esc(x.for)}</span></span></div>`).join("")}</div>` : ""; })()}
     ${lunch}
     ${tomorrow ? `<button class="pick" data-recipe="${tomorrow.id}" data-week="${w.id}">${art(tomorrow)}<span><span>Morgen</span><b>${esc(tomorrow.name)}</b></span><span class="muted small">${esc(tomorrow.time)}</span></button>` : ""}
     <div class="tiles">
@@ -337,7 +405,7 @@ function viewHeute() {
 function viewWoche(w) {
   const s = wstate(w), sm = summary(w), st = weekStatus(w), tk = st === "current" ? DAYKEYS[dayIndex(new Date())] : "";
   const start = parseDate(w.start);
-  const badges = [`<span class="badge">${sm.vegi}× vegi</span>`, `<span class="badge">Ø ${Math.round(sm.prot)} g Protein</span>`,
+  const badges = [`<span class="badge">${sm.vegi}× vegi</span>`, `<span class="badge">Ø ${Math.round(sm.prot)} g Protein</span>`, ...(sm.kcal ? [`<span class="badge">Ø ${Math.round(sm.kcal)} kcal</span>`] : []),
     sm.fish > 1 ? `<span class="badge warn">Fisch ${sm.fish}×, lieber 1×</span>` : `<span class="badge">Fisch ${sm.fish}×</span>`, `<span class="badge">ohne Schweinefleisch</span>`];
   return `
     <div class="top"><div><span class="eyebrow">${statusLabel(w)}</span><h1>${dm(start)} – ${dm(addDays(start, 6))}</h1></div>${syncChipHtml()}</div>
@@ -353,12 +421,13 @@ function viewWoche(w) {
     <div class="section"><h2>Euer Plan</h2><div class="days">${DAYS.map(([k, sh]) => {
       const r = w.byId[s.sel[k]];
       const needsNote = r && r.needs && !Object.values(s.sel).includes(r.needs) ? `<span>+ Zusatzzutat, weil ${esc(w.byId[r.needs] ? w.byId[r.needs].name : "das Vorgericht")} fehlt</span>` : "";
+      const sp = isSpecial(s.sel[k]) ? s.sel[k] : null;
       return `<div class="day${k === tk ? " today" : ""}${r ? "" : " free"}">
         <div class="date"><b>${sh}</b><span>${dm(dateOf(w, k))}</span></div>
-        ${art(r)}
+        ${sp ? specialArt(sp) : art(r)}
         <div class="info">${r ? `<button class="name" data-recipe="${r.id}" data-week="${w.id}">${esc(r.name)}</button>
-          <div class="meta"><span>${esc(r.time)}</span><span class="num">${chf(perPortion(w, r, s.sel))}</span>${r.protein ? `<span>${r.protein} g Protein</span>` : ""}${needsNote}</div>`
-          : `<b class="muted">Kochfrei</b>`}
+          <div class="meta"><span>${esc(r.time)}</span>${r.kcal ? `<span>${r.kcal} kcal</span>` : ""}${r.protein ? `<span>${r.protein} g Protein</span>` : ""}<span class="num">${chf(perPortion(w, r, s.sel))}</span>${porOf(s, k) !== PORTIONS ? `<span class="porbadge">${porOf(s, k)} Portionen</span>` : ""}${needsNote}</div>`
+          : sp ? `<b>${SPECIAL[sp].name}</b><div class="meta"><span>${SPECIAL[sp].sub}</span></div>` : `<b class="muted">Kochfrei</b>`}
           <button class="swap" data-swap="${k}" data-week="${w.id}">${r ? "Tauschen" : "Gericht wählen"}</button></div></div>`;
     }).join("")}</div></div>
     <p class="footer">${esc(w.updated)}</p>`;
@@ -389,7 +458,7 @@ function dishGrid(w) {
   return `<div class="grid">${list.map(r => {
     const on = DAYS.filter(([k]) => s.sel[k] === r.id).map(d => d[1]);
     return `<button class="dish" data-recipe="${r.id}" data-week="${w.id}">${on.length ? `<span class="inplan">${on.join(" · ")}</span>` : ""}${art(r)}
-      <span class="txt"><b>${esc(r.name)}</b><span>${esc(r.time)} · ${chf(perPortion(w, r))}${r.protein ? ` · ${r.protein} g Prot.` : ""}</span></span></button>`;
+      <span class="txt"><b>${esc(r.name)}</b><span>${esc(r.time)} · ${chf(perPortion(w, r))}${r.kcal ? ` · ${r.kcal} kcal` : ""}${r.protein ? ` · ${r.protein} g Prot.` : ""}</span></span></button>`;
   }).join("")}</div>`;
 }
 function viewGerichte(w) {
@@ -407,15 +476,21 @@ function viewEinkauf(w) {
   const groupHtml = (title, rows, extra) => {
     const vis = store.hideDone ? rows.filter(r => !s.checked[r.key]) : rows;
     if (!rows.length) return "";
-    return `<div class="group"><h3>${title} ${extra}</h3>${vis.length ? vis.map(r => r.p ? itemRow(r, s) : pantryRow(r, s)).join("") : `<div class="empty small">Alles erledigt.</div>`}</div>`;
+    let lastCat = null, body = "";
+    for (const r of vis) {
+      if (r.p && r.cat !== lastCat) { lastCat = r.cat; body += `<div class="subhead">${CATS[CAT_ORDER[r.cat]][1]}</div>`; }
+      body += r.p ? itemRow(r, s) : pantryRow(r, s);
+    }
+    return `<div class="group"><h3>${title} ${extra}</h3>${vis.length ? body : `<div class="empty small">Alles erledigt.</div>`}</div>`;
   };
   const itemRow = (r, s) => `<label class="item${s.checked[r.key] ? " checked" : ""}"><input type="checkbox" data-check="${r.key}"${s.checked[r.key] ? " checked" : ""}>
       <span><span class="name">${r.packs > 1 ? r.packs + " × " : ""}${esc(r.p.name)}${r.p.statt ? `<span class="deal">Aktion</span>` : ""}</span><br>
       <span class="info">${esc(r.p.label)} · Bedarf ${needText(r)} · ${r.days.join(", ")}</span></span>
-      <span class="price num">${r.p.approx ? "ca. " : ""}${r.cost.toFixed(2)}${r.statt ? `<s>${r.statt.toFixed(2)}</s>` : ""}</span></label>`;
+      <span class="price num">${r.p.approx ? "ca. " : ""}${r.cost.toFixed(2)}${r.statt ? `<s>${r.statt.toFixed(2)}</s>` : ""}<button class="havebtn" data-have="${r.key}">Haben wir</button></span></label>`;
   const pantryRow = (p, s) => `<label class="item${s.checked[p.key] ? " checked" : ""}"><input type="checkbox" data-check="${p.key}"${s.checked[p.key] ? " checked" : ""}>
       <span><span class="name">${esc(p.name)}</span><br><span class="info">${p.days.join(", ")}</span></span><span></span></label>`;
-  const byStore = st => list.rows.filter(r => r.p.store === st).sort((a, b) => (!!b.p.statt - !!a.p.statt) || a.p.name.localeCompare(b.p.name, "de"));
+  const byStore = st => list.rows.filter(r => r.p.store === st && !r.have).sort((a, b) => (CAT_ORDER[a.cat] - CAT_ORDER[b.cat]) || a.p.name.localeCompare(b.p.name, "de"));
+  const haveRows = list.rows.filter(r => r.have);
   const sumOf = rows => chf(rows.reduce((a, r) => a + r.cost, 0));
   const mig = byStore("Migros"), aldi = byStore("Aldi");
   return `
@@ -429,6 +504,7 @@ function viewEinkauf(w) {
     ${groupHtml("Migros", mig, `<span class="num">${sumOf(mig)}</span>`)}
     ${groupHtml("Aldi", aldi, `<span class="num">${sumOf(aldi)}</span>`)}
     ${groupHtml("Grundvorrat", list.pantry, "<span>zu Hause prüfen</span>")}
+    ${haveRows.length ? `<div class="group"><h3>Schon zu Hause <span>nicht im Total</span></h3>${haveRows.map(r => `<div class="item haveitem"><span></span><span><span class="name">${esc(r.p.name)}</span><br><span class="info">${esc(r.p.label)} · Bedarf ${needText(r)}</span></span><span class="price"><button class="havebtn" data-unhave="${r.key}">Doch kaufen</button></span></div>`).join("")}</div>` : ""}
     <p class="footer">${esc(w.updated)}</p>`;
 }
 
@@ -454,6 +530,7 @@ function recipeSheet(w, r) {
   const s = wstate(w);
   sheetCtx = { type: "recipe", week: w.id, recipe: r.id };
   const days = DAYS.filter(([k]) => s.sel[k] === r.id).map(d => d[0]);
+  const por = days.length ? porOf(s, days[0]) : (ui.tmpPor[r.id] || PORTIONS), f = por / PORTIONS;
   return `<div class="grab"><span class="handle"></span><button class="close" data-act="close" aria-label="Schliessen">×</button></div>
     ${art(r, "head")}
     <div class="content">
@@ -461,15 +538,17 @@ function recipeSheet(w, r) {
       <h2 style="font-size:27px">${esc(r.name)}</h2>
       <div class="factgrid">
         <div><b>${r.minutes}′</b><span>Minuten</span></div>
-        <div><b>4</b><span>Portionen</span></div>
+        <div><b>${r.kcal || "–"}</b><span>kcal/Portion</span></div>
         <div><b>${r.protein || "–"}${r.protein ? " g" : ""}</b><span>Protein</span></div>
         <div><b class="num">${perPortion(w, r, s.sel).toFixed(2)}</b><span>CHF/Portion</span></div>
       </div>
+      <div class="stepper"><span><b>Portionen</b><br><span class="small muted">${days.length ? "gilt für " + days.map(k => DAYS.find(d => d[0] === k)[1]).join(", ") + " · Einkauf passt sich an" : "2 zum Essen, 2 zum Mitnehmen"}</span></span>
+        <span class="row"><button data-por="-1" aria-label="Weniger Portionen">−</button><b class="num" id="porVal">${por}</b><button data-por="1" aria-label="Mehr Portionen">+</button></span></div>
       ${sourceLink(r)}
       ${r.note ? `<div class="note">${esc(r.note)}</div>` : ""}
       <div class="section"><h3>An welchem Tag?</h3>
         <div class="daypick">${DAYS.map(([k, sh]) => `<button data-assign="${k}" aria-pressed="${days.includes(k)}" aria-label="${sh}">${sh}</button>`).join("")}</div></div>
-      <div class="section"><h3>Zutaten</h3><ul class="ing">${r.ingredients.map((x, i) => `<li data-ing="${i}" class="${ui.ingDone[r.id + i] ? "done" : ""}">${esc(x)}</li>`).join("")}</ul></div>
+      <div class="section"><h3>Zutaten</h3><ul class="ing">${r.ingredients.map((x, i) => `<li data-ing="${i}" class="${ui.ingDone[r.id + i] ? "done" : ""}">${esc(scaleText(x, f))}</li>`).join("")}</ul></div>
       <div class="section"><h3>Zubereitung</h3><ol class="steps">${r.steps.map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>
     </div>
     <div class="sticky-cta"><button class="btn primary block" data-cookrecipe="${r.id}">Schritt für Schritt kochen</button></div>`;
@@ -482,7 +561,8 @@ function pickSheet(w, dayKey) {
     <div class="content" style="padding-top:0">
       <div><span class="eyebrow">${dayName}, ${dm(dateOf(w, dayKey))}</span><h2>Was kocht ihr?</h2></div>
       <div class="pick-list">
-        <button class="pick${cur === "" ? " current" : ""}" data-choose="">${art(null)}<span><b>Kochfrei</b><span>Auswärts, Reste oder spontan</span></span><span class="tick">${cur === "" ? "✓" : ""}</span></button>
+        ${Object.entries(SPECIAL).map(([v, sp]) => `<button class="pick${cur === v ? " current" : ""}" data-choose="${v}">${specialArt(v)}<span><b>${sp.name}</b><span>${sp.sub}</span></span><span class="tick">${cur === v ? "✓" : ""}</span></button>`).join("")}
+        <button class="pick${cur === "" ? " current" : ""}" data-choose="">${art(null)}<span><b>Noch offen</b><span>Entscheiden wir spontan</span></span><span class="tick">${cur === "" ? "✓" : ""}</span></button>
         ${sorted.map(r => `<button class="pick${r.id === cur ? " current" : ""}" data-choose="${r.id}">${art(r)}<span><b>${esc(r.name)}</b><span>${esc(r.time)} · ${chf(perPortion(w, r))}${r.protein ? ` · ${r.protein} g Prot.` : ""}</span></span><span class="tick">${r.id === cur ? "✓" : ""}</span></button>`).join("")}
       </div></div>`;
 }
@@ -501,7 +581,10 @@ function openCookRecipe(w, r) {
   closeSheet();
   cook = { r, i: 0 };
   $("cookTitle").textContent = r.name;
-  $("cookIng").innerHTML = r.ingredients.map(x => `<li>${esc(x)}</li>`).join("");
+  const s = wstate(w), days = DAYS.filter(([k]) => s.sel[k] === r.id).map(d => d[0]);
+  const f = (days.length ? porOf(s, days[0]) : (ui.tmpPor[r.id] || PORTIONS)) / PORTIONS;
+  $("cookIng").innerHTML = r.ingredients.map(x => `<li>${esc(scaleText(x, f))}</li>`).join("");
+  drawSpeakBtn();
   $("cook").hidden = false;
   drawCook();
   try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(l => { wakeLock = l; }).catch(() => {}); } catch (e) { /* ignorieren */ }
@@ -514,6 +597,7 @@ function drawCook() {
   $("cookStep").textContent = r.steps[i];
   $("cookPrev").disabled = i === 0;
   $("cookNext").textContent = i === r.steps.length - 1 ? "Fertig, en Guete!" : "Weiter";
+  if (store.speak) say(`Schritt ${i + 1}. ${r.steps[i]}`);
   const min = stepMinutes(r.steps[i]);
   const tb = $("cookTimer");
   if (timer && timer.step === i) { tb.hidden = false; }
@@ -539,7 +623,24 @@ function toggleTimer() {
   }, 250) };
   tb.classList.add("run");
 }
+function say(text) {
+  try {
+    if (!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text), voices = speechSynthesis.getVoices();
+    u.lang = "de-DE"; u.rate = 0.95;
+    const v = voices.find(v => /^de[-_]CH/i.test(v.lang)) || voices.find(v => /^de/i.test(v.lang)); if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch (e) { /* ignorieren */ }
+}
+function drawSpeakBtn() {
+  const b = $("cookSpeak"); if (!b) return;
+  b.setAttribute("aria-pressed", String(!!store.speak));
+  $("cookSpeakTxt").textContent = store.speak ? "Vorlesen an" : "Vorlesen";
+  b.hidden = !("speechSynthesis" in window);
+}
 function closeCook() {
+  try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch (e) { /* ignorieren */ }
   $("cook").hidden = true; cook = null;
   if (timer) { clearInterval(timer.id); timer = null; }
   if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
@@ -548,6 +649,11 @@ $("cookPrev").onclick = () => { if (cook.i > 0) { cook.i--; drawCook(); } };
 $("cookNext").onclick = () => { if (cook.i < cook.r.steps.length - 1) { cook.i++; drawCook(); } else closeCook(); };
 $("cookClose").onclick = closeCook;
 $("cookTimer").onclick = toggleTimer;
+$("cookSpeak").onclick = () => {
+  store.speak = !store.speak; saveLocal(); drawSpeakBtn();
+  if (store.speak && cook) say(`Schritt ${cook.i + 1}. ${cook.r.steps[cook.i]}`);
+  else try { speechSynthesis.cancel(); } catch (e) { /* ignorieren */ }
+};
 
 /* ---------- Navigation ---------- */
 function activeWeek() { return weekById[ui.week] || currentWeek(); }
@@ -609,10 +715,18 @@ $("view").addEventListener("click", async e => {
     return render(true);
   }
   if (d.act === "plan") {
-    const s = wstate(w); s.sel = planByMood(w, s.moods); s.checked = {};
+    const s = wstate(w), keep = Object.fromEntries(DAYKEYS.filter(k => isSpecial(s.sel[k])).map(k => [k, s.sel[k]]));
+    s.sel = planByMood(w, s.moods, keep); s.checked = {};
     patch(w.id, { sel: s.sel, checked: null });
     render(true); const tt = $("toast"); if (tt) tt.textContent = "Neu zusammengestellt. Einzelne Tage könnt ihr unten tauschen.";
     return;
+  }
+  if (d.have || d.unhave) {
+    e.preventDefault();
+    const s = wstate(w), k = d.have || d.unhave, val = !!d.have;
+    if (val) s.have[k] = true; else delete s.have[k];
+    patch(w.id, { ["have/" + k]: val ? true : null });
+    return render(true);
   }
   if (d.act === "syncinfo") return openSheet(syncSheet(), true);
   if (d.act === "reset") { wstate(w).checked = {}; patch(w.id, { checked: null }); return render(true); }
@@ -653,6 +767,15 @@ $("sheet").addEventListener("click", e => {
     const s = wstate(w), k = d.assign, val = s.sel[k] === sheetCtx.recipe ? "" : sheetCtx.recipe;
     s.sel[k] = val; patch(w.id, { ["sel/" + k]: val });
     return render(true);
+  }
+  if (d.por) {
+    const s = wstate(w), r = w.byId[sheetCtx.recipe], days = DAYS.filter(([k]) => s.sel[k] === r.id).map(x => x[0]);
+    const cur = days.length ? porOf(s, days[0]) : (ui.tmpPor[r.id] || PORTIONS);
+    const next = Math.min(12, Math.max(1, cur + Number(d.por)));
+    if (days.length) { const p = {}; days.forEach(k => { s.por[k] = next; p["por/" + k] = next === PORTIONS ? null : next; if (next === PORTIONS) delete s.por[k]; }); patch(w.id, p); render(true); }
+    else ui.tmpPor[r.id] = next;
+    const y = $("sheet").scrollTop; $("sheet").innerHTML = recipeSheet(w, r); $("sheet").scrollTop = y;
+    return;
   }
   if (d.cookrecipe) return openCookRecipe(w, w.byId[d.cookrecipe]);
   if (d.choose !== undefined && sheetCtx.type === "pick") {

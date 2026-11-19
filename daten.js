@@ -7,33 +7,33 @@ const WOCHEN = [
     label: "Woche ab Mo 16.11. · Migros-Aktionen bis Mi 18.11., Aldi solange Vorrat",
     updated: "Preise Stand 14.11.2026, Kanton Zürich. Aktionspreise von aktionis.ch, eini.app, rappn.ch und aldi-suisse.ch; Preise ohne Aktion sind geschätzt.",
     products: {
-      poulet: {"name":"Optigal Poulet ganz","label":"1 Stück, ca. 1,2 kg","store":"Migros","unit":"stk","pack":1,"price":8.35,"statt":11.95},
-      suesskartoffeln: {"name":"Süsskartoffeln","label":"1 kg","store":"Migros","unit":"g","pack":1000,"price":1.25,"statt":1.8},
-      weisskabis: {"name":"Weisskabis","label":"1 Kopf, ca. 1,5 kg","store":"Migros","unit":"g","pack":1500,"price":2.4,"statt":3},
-      aubergine: {"name":"Bio-Auberginen","label":"1 Stück, ca. 300 g","store":"Migros","unit":"stk","pack":1,"price":1.15,"statt":1.5},
-      lauch: {"name":"Bio-Lauch","label":"500 g","store":"Migros","unit":"g","pack":500,"price":3.5,"statt":5},
-      datteltomaten: {"name":"Snack Datteltomaten","label":"250 g","store":"Migros","unit":"g","pack":250,"price":1.75,"statt":2.95},
-      tomaten: {"name":"Longobardi Tomaten gehackt","label":"6 × 230 g","store":"Migros","unit":"dose","pack":6,"price":5.45,"statt":7.8},
-      zitronen: {"name":"Bio-Zitronen","label":"750 g, ca. 6 Stück","store":"Migros","unit":"stk","pack":6,"price":1.95,"statt":2.8},
-      gruyere: {"name":"Gruyère Reibkäse","label":"3 × 130 g","store":"Migros","unit":"beutel","pack":3,"price":6.95,"statt":8.85},
-      reisnudeln: {"name":"Thai Kitchen Reisnudeln","label":"250 g","store":"Migros","unit":"g","pack":250,"price":2.2,"statt":2.75},
-      gnocchi: {"name":"Anna's Best Gnocchi Caprese","label":"2 × 400 g","store":"Migros","unit":"g","pack":800,"price":7.9,"statt":9.9},
-      tofu: {"name":"Tofu nature","label":"400 g","store":"Migros","unit":"g","pack":400,"price":3.8,"approx":true},
-      bohnen: {"name":"Weisse Bohnen","label":"Dose, 400 g","store":"Migros","unit":"dose","pack":1,"price":1.25,"approx":true},
-      kichererbsen: {"name":"Kichererbsen","label":"Dose, 400 g","store":"Migros","unit":"dose","pack":1,"price":1.25,"approx":true},
-      linsen: {"name":"Rote Linsen","label":"500 g","store":"Migros","unit":"g","pack":500,"price":2.5,"approx":true},
-      risottoreis: {"name":"Risottoreis","label":"1 kg","store":"Migros","unit":"g","pack":1000,"price":2.9,"approx":true},
-      mozzarella: {"name":"Mozzarella","label":"150 g","store":"Migros","unit":"stk","pack":1,"price":1.2,"approx":true},
-      eier: {"name":"Eier","label":"6 Stück","store":"Migros","unit":"stk","pack":6,"price":3.5,"approx":true},
-      zwiebeln: {"name":"Zwiebeln","label":"1 kg, ca. 8 Stück","store":"Migros","unit":"stk","pack":8,"price":2,"approx":true},
-      karotten: {"name":"Karotten","label":"1 kg, ca. 8 Stück","store":"Migros","unit":"stk","pack":8,"price":2,"approx":true},
-      fruehlingszw: {"name":"Frühlingszwiebeln","label":"1 Bund","store":"Migros","unit":"bund","pack":1,"price":1.8,"approx":true},
-      knoblauch: {"name":"Knoblauch","label":"1 Knolle, ca. 10 Zehen","store":"Migros","unit":"stk","pack":10,"price":1.5,"approx":true},
-      ingwer: {"name":"Ingwer","label":"1 Stück, ca. 100 g","store":"Migros","unit":"g","pack":100,"price":1,"approx":true},
-      lachs: {"name":"Lachsfiletportionen, tiefgekühlt","label":"500 g","store":"Aldi","unit":"g","pack":500,"price":9.69},
-      penne: {"name":"Rummo Penne Rigate","label":"2 kg","store":"Aldi","unit":"g","pack":2000,"price":4.99,"statt":5.99},
-      peterli: {"name":"Küchenkräuter (Peterli)","label":"1 Topf","store":"Aldi","unit":"stk","pack":1,"price":2.99},
-      brot: {"name":"Ruchbrot","label":"500 g","store":"Migros","unit":"stk","pack":1,"price":2.8,"approx":true}
+      poulet: {"name":"Optigal Poulet ganz","label":"1 Stück, ca. 1,2 kg","store":"Migros","unit":"stk","pack":1,"price":8.35,"statt":11.95,"cat":"fleisch"},
+      suesskartoffeln: {"name":"Süsskartoffeln","label":"1 kg","store":"Migros","unit":"g","pack":1000,"price":1.25,"statt":1.8,"cat":"gemuese"},
+      weisskabis: {"name":"Weisskabis","label":"1 Kopf, ca. 1,5 kg","store":"Migros","unit":"g","pack":1500,"price":2.4,"statt":3,"cat":"gemuese"},
+      aubergine: {"name":"Bio-Auberginen","label":"1 Stück, ca. 300 g","store":"Migros","unit":"stk","pack":1,"price":1.15,"statt":1.5,"cat":"gemuese"},
+      lauch: {"name":"Bio-Lauch","label":"500 g","store":"Migros","unit":"g","pack":500,"price":3.5,"statt":5,"cat":"gemuese"},
+      datteltomaten: {"name":"Snack Datteltomaten","label":"250 g","store":"Migros","unit":"g","pack":250,"price":1.75,"statt":2.95,"cat":"gemuese"},
+      tomaten: {"name":"Longobardi Tomaten gehackt","label":"6 × 230 g","store":"Migros","unit":"dose","pack":6,"price":5.45,"statt":7.8,"cat":"vorrat"},
+      zitronen: {"name":"Bio-Zitronen","label":"750 g, ca. 6 Stück","store":"Migros","unit":"stk","pack":6,"price":1.95,"statt":2.8,"cat":"gemuese"},
+      gruyere: {"name":"Gruyère Reibkäse","label":"3 × 130 g","store":"Migros","unit":"beutel","pack":3,"price":6.95,"statt":8.85,"cat":"kuehl"},
+      reisnudeln: {"name":"Thai Kitchen Reisnudeln","label":"250 g","store":"Migros","unit":"g","pack":250,"price":2.2,"statt":2.75,"cat":"vorrat"},
+      gnocchi: {"name":"Anna's Best Gnocchi Caprese","label":"2 × 400 g","store":"Migros","unit":"g","pack":800,"price":7.9,"statt":9.9,"cat":"kuehl"},
+      tofu: {"name":"Tofu nature","label":"400 g","store":"Migros","unit":"g","pack":400,"price":3.8,"approx":true,"cat":"kuehl"},
+      bohnen: {"name":"Weisse Bohnen","label":"Dose, 400 g","store":"Migros","unit":"dose","pack":1,"price":1.25,"approx":true,"cat":"vorrat"},
+      kichererbsen: {"name":"Kichererbsen","label":"Dose, 400 g","store":"Migros","unit":"dose","pack":1,"price":1.25,"approx":true,"cat":"vorrat"},
+      linsen: {"name":"Rote Linsen","label":"500 g","store":"Migros","unit":"g","pack":500,"price":2.5,"approx":true,"cat":"vorrat"},
+      risottoreis: {"name":"Risottoreis","label":"1 kg","store":"Migros","unit":"g","pack":1000,"price":2.9,"approx":true,"cat":"vorrat"},
+      mozzarella: {"name":"Mozzarella","label":"150 g","store":"Migros","unit":"stk","pack":1,"price":1.2,"approx":true,"cat":"kuehl"},
+      eier: {"name":"Eier","label":"6 Stück","store":"Migros","unit":"stk","pack":6,"price":3.5,"approx":true,"cat":"kuehl"},
+      zwiebeln: {"name":"Zwiebeln","label":"1 kg, ca. 8 Stück","store":"Migros","unit":"stk","pack":8,"price":2,"approx":true,"cat":"gemuese"},
+      karotten: {"name":"Karotten","label":"1 kg, ca. 8 Stück","store":"Migros","unit":"stk","pack":8,"price":2,"approx":true,"cat":"gemuese"},
+      fruehlingszw: {"name":"Frühlingszwiebeln","label":"1 Bund","store":"Migros","unit":"bund","pack":1,"price":1.8,"approx":true,"cat":"gemuese"},
+      knoblauch: {"name":"Knoblauch","label":"1 Knolle, ca. 10 Zehen","store":"Migros","unit":"stk","pack":10,"price":1.5,"approx":true,"cat":"gemuese"},
+      ingwer: {"name":"Ingwer","label":"1 Stück, ca. 100 g","store":"Migros","unit":"g","pack":100,"price":1,"approx":true,"cat":"gemuese"},
+      lachs: {"name":"Lachsfiletportionen, tiefgekühlt","label":"500 g","store":"Aldi","unit":"g","pack":500,"price":9.69,"cat":"tk"},
+      penne: {"name":"Rummo Penne Rigate","label":"2 kg","store":"Aldi","unit":"g","pack":2000,"price":4.99,"statt":5.99,"cat":"vorrat"},
+      peterli: {"name":"Küchenkräuter (Peterli)","label":"1 Topf","store":"Aldi","unit":"stk","pack":1,"price":2.99,"cat":"gemuese"},
+      brot: {"name":"Ruchbrot","label":"500 g","store":"Migros","unit":"stk","pack":1,"price":2.8,"approx":true,"cat":"brot"}
     },
     recipes: [
       {
@@ -42,6 +42,8 @@ const WOCHEN = [
         tags: ["italienisch","vegetarisch"],
         time: "35 Min.",
         minutes: 35,
+        protein: 25,
+        kcal: 590,
         items: [["weisskabis",400],["karotten",2],["lauch",200],["zwiebeln",1],["knoblauch",2],["tomaten",2],["bohnen",2],["penne",200],["gruyere",1],["peterli",0.5]],
         pantry: ["Gemüsebouillon","Olivenöl","Pfeffer"],
         ingredients: [
@@ -66,8 +68,7 @@ const WOCHEN = [
           "Weitere 10 bis 12 Minuten köcheln, bis die Penne gar sind. Ab und zu umrühren, damit nichts ansetzt.",
           "Mit Pfeffer abschmecken. Mit Gruyère und gehacktem Peterli servieren.",
           "Für die Lunchboxen: Die Suppe dickt über Nacht ein. Beim Aufwärmen einen Schluck Wasser dazugeben."
-        ],
-        protein: 25
+        ]
       },
       {
         id: "lachs",
@@ -75,6 +76,8 @@ const WOCHEN = [
         tags: ["fisch"],
         time: "35 Min.",
         minutes: 35,
+        protein: 29,
+        kcal: 540,
         items: [["lachs",500],["suesskartoffeln",1000],["datteltomaten",250],["zitronen",1],["peterli",0.5]],
         pantry: ["Öl","Paprikapulver","Salz","Pfeffer"],
         ingredients: [
@@ -95,7 +98,7 @@ const WOCHEN = [
           "Weitere 12 bis 15 Minuten backen, bis der Lachs sich mit der Gabel leicht teilen lässt.",
           "Datteltomaten halbieren und leicht salzen. Alles mit dem Saft der anderen Zitronenhälfte und gehacktem Peterli servieren."
         ],
-        protein: 29
+        prep: [{"daysBefore":0,"text":"Lachs am Morgen zum Auftauen in den Kühlschrank legen"}]
       },
       {
         id: "suppe",
@@ -103,6 +106,8 @@ const WOCHEN = [
         tags: ["vegetarisch"],
         time: "30 Min.",
         minutes: 30,
+        protein: 14,
+        kcal: 415,
         items: [["suesskartoffeln",600],["lauch",400],["bohnen",1],["kichererbsen",1],["zwiebeln",1],["knoblauch",1],["zitronen",0.5]],
         pantry: ["Gemüsebouillon","Öl","Paprikapulver","Salz","Pfeffer"],
         ingredients: [
@@ -126,8 +131,7 @@ const WOCHEN = [
           "Suppe mit dem Stabmixer pürieren. Ohne Mixer: mit dem Kartoffelstampfer grob zerdrücken.",
           "Mit Zitronensaft und Pfeffer abschmecken, Kichererbsen darüberstreuen.",
           "Für die Lunchboxen: Kichererbsen separat einpacken, damit sie knusprig bleiben."
-        ],
-        protein: 14
+        ]
       },
       {
         id: "reisnudeln",
@@ -135,6 +139,8 @@ const WOCHEN = [
         tags: ["vegetarisch","schnell"],
         time: "25 Min.",
         minutes: 25,
+        protein: 25,
+        kcal: 625,
         items: [["reisnudeln",300],["tofu",400],["weisskabis",500],["karotten",2],["fruehlingszw",0.6],["eier",4],["knoblauch",2],["ingwer",30],["zitronen",0.5]],
         pantry: ["Sojasauce","Öl"],
         ingredients: [
@@ -158,8 +164,7 @@ const WOCHEN = [
           "Gemüse an den Rand schieben, Eier in die Mitte schlagen und zu Rührei verrühren.",
           "Nudeln, Tofu und restliche Sojasauce dazugeben, alles 2 Minuten mischen.",
           "Mit Zitronensaft abschmecken und Frühlingszwiebeln darüberstreuen."
-        ],
-        protein: 25
+        ]
       },
       {
         id: "penne-aubergine",
@@ -167,6 +172,8 @@ const WOCHEN = [
         tags: ["italienisch","vegetarisch"],
         time: "30 Min.",
         minutes: 30,
+        protein: 26,
+        kcal: 730,
         items: [["penne",500],["aubergine",2],["tomaten",3],["zwiebeln",1],["knoblauch",2],["gruyere",1]],
         pantry: ["Olivenöl","Salz","Pfeffer"],
         ingredients: [
@@ -187,8 +194,7 @@ const WOCHEN = [
           "Gleichzeitig Penne in reichlich Salzwasser nach Packungsangabe kochen. Vor dem Abgiessen eine Tasse Kochwasser aufheben.",
           "Penne mit der Sauce mischen, bei Bedarf etwas Kochwasser dazugeben. Mit Pfeffer abschmecken.",
           "Mit Gruyère bestreuen."
-        ],
-        protein: 26
+        ]
       },
       {
         id: "poulet-ofen",
@@ -196,6 +202,8 @@ const WOCHEN = [
         tags: ["poulet"],
         time: "15 Min. + 75 Min. Ofen",
         minutes: 90,
+        protein: 40,
+        kcal: 750,
         items: [["poulet",2],["suesskartoffeln",1000],["lauch",400],["zwiebeln",2],["zitronen",1],["knoblauch",3]],
         pantry: ["Öl","Paprikapulver","Salz","Pfeffer"],
         ingredients: [
@@ -219,7 +227,7 @@ const WOCHEN = [
           "Vom zweiten Poulet das Fleisch ablösen und im Kühlschrank aufbewahren. Die Knochen von beiden Poulets für Sonntag aufheben."
         ],
         note: "Poulets beim Einkauf einfrieren und am Donnerstagabend in den Kühlschrank legen.",
-        protein: 40
+        prep: [{"daysBefore":2,"text":"Poulets aus dem Tiefkühler in den Kühlschrank legen (für Samstag)"}]
       },
       {
         id: "poulet-suppe",
@@ -227,9 +235,9 @@ const WOCHEN = [
         tags: ["poulet"],
         time: "20 Min. + 60 Min. köcheln",
         minutes: 80,
+        protein: 30,
+        kcal: 500,
         items: [["weisskabis",300],["karotten",2],["zwiebeln",1],["ingwer",30],["reisnudeln",200],["zitronen",0.5],["fruehlingszw",0.4]],
-        needs: "poulet-ofen",
-        fallback: [["poulet",1]],
         pantry: ["Sojasauce","Salz"],
         ingredients: [
           "Knochen und Restfleisch vom Ofen-Poulet",
@@ -254,7 +262,9 @@ const WOCHEN = [
           "Für die Lunchboxen: Nudeln separat einpacken, sonst saugen sie die Brühe auf."
         ],
         note: "Braucht die Reste vom Ofen-Poulet. Ohne Ofen-Poulet kommt automatisch ein Poulet auf die Einkaufsliste: dann das ganze Poulet in Schritt 1 mitkochen und nach 60 Minuten das Fleisch ablösen.",
-        protein: 30
+        prep: [{"daysBefore":1,"text":"Knochen und Reste vom Ofen-Poulet für die Suppe aufheben"}],
+        needs: "poulet-ofen",
+        fallback: [["poulet",1]]
       },
       {
         id: "pasta-ceci",
@@ -262,6 +272,8 @@ const WOCHEN = [
         tags: ["italienisch","vegetarisch","schnell"],
         time: "25 Min.",
         minutes: 25,
+        protein: 30,
+        kcal: 770,
         items: [["penne",400],["kichererbsen",2],["tomaten",2],["zwiebeln",1],["knoblauch",2],["karotten",1],["gruyere",1]],
         pantry: ["Gemüsebouillon","Olivenöl","Rosmarin, getrocknet","Salz","Pfeffer"],
         ingredients: [
@@ -285,8 +297,7 @@ const WOCHEN = [
           "Penne roh dazugeben und 12 Minuten köcheln, dabei oft umrühren. Wird es zu dick, etwas Wasser nachgiessen.",
           "Mit Salz und Pfeffer abschmecken. Mit Gruyère und einem Schuss Olivenöl servieren.",
           "Für die Lunchboxen: Dickt ein, beim Aufwärmen etwas Wasser dazugeben."
-        ],
-        protein: 30
+        ]
       },
       {
         id: "linsen-bolognese",
@@ -294,6 +305,8 @@ const WOCHEN = [
         tags: ["italienisch","vegetarisch"],
         time: "35 Min.",
         minutes: 35,
+        protein: 38,
+        kcal: 875,
         items: [["linsen",250],["tomaten",3],["karotten",2],["zwiebeln",1],["knoblauch",2],["penne",500],["gruyere",1]],
         pantry: ["Olivenöl","Gemüsebouillon","Oregano","Salz","Pfeffer"],
         ingredients: [
@@ -317,8 +330,7 @@ const WOCHEN = [
           "Gleichzeitig Penne in Salzwasser nach Packungsangabe kochen und abgiessen.",
           "Sauce mit Salz und Pfeffer abschmecken, mit den Penne mischen.",
           "Mit Gruyère bestreuen. Die Sauce lässt sich gut einfrieren."
-        ],
-        protein: 38
+        ]
       },
       {
         id: "gnocchi-gratin",
@@ -326,6 +338,8 @@ const WOCHEN = [
         tags: ["italienisch","vegetarisch","schnell"],
         time: "30 Min.",
         minutes: 30,
+        protein: 24,
+        kcal: 690,
         items: [["gnocchi",800],["aubergine",1],["tomaten",2],["bohnen",1],["mozzarella",2],["zwiebeln",1],["knoblauch",1]],
         pantry: ["Olivenöl","Oregano","Salz","Pfeffer"],
         ingredients: [
@@ -348,8 +362,7 @@ const WOCHEN = [
           "Gnocchi roh unter die Sauce mischen und alles in eine Auflaufform geben.",
           "Mozzarella zerzupfen und darauf verteilen.",
           "15 Minuten backen, bis der Käse goldbraun ist."
-        ],
-        protein: 24
+        ]
       },
       {
         id: "risotto",
@@ -357,6 +370,8 @@ const WOCHEN = [
         tags: ["italienisch","vegetarisch"],
         time: "40 Min.",
         minutes: 40,
+        protein: 23,
+        kcal: 700,
         items: [["risottoreis",350],["lauch",400],["bohnen",2],["zwiebeln",1],["zitronen",0.5],["gruyere",1]],
         pantry: ["Gemüsebouillon","Olivenöl","Butter","Pfeffer"],
         ingredients: [
@@ -379,8 +394,7 @@ const WOCHEN = [
           "Bohnen abspülen und in den letzten 5 Minuten dazugeben.",
           "Topf vom Herd nehmen. Butter, Gruyère und etwas Zitronensaft unterrühren, 2 Minuten ruhen lassen.",
           "Mit Pfeffer abschmecken. Für die Lunchboxen beim Aufwärmen etwas Wasser dazugeben."
-        ],
-        protein: 23
+        ]
       },
       {
         id: "shakshuka",
@@ -389,6 +403,7 @@ const WOCHEN = [
         time: "25 Min.",
         minutes: 25,
         protein: 30,
+        kcal: 740,
         items: [["eier",8],["kichererbsen",2],["tomaten",3],["zwiebeln",1],["knoblauch",2],["peterli",0.5],["brot",1]],
         pantry: ["Olivenöl","Paprikapulver","Kreuzkümmel","Salz","Pfeffer"],
         ingredients: [
