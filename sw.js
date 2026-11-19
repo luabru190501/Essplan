@@ -1,6 +1,6 @@
 /* Macht die App offline nutzbar. Immer zuerst frisch aus dem Internet, sonst aus dem Speicher. */
-const CACHE = "essplan-v10";
-const FILES = ["./", "index.html", "app.js", "daten.js", "sync-config.js", "haushalt.js", "kalender.js", "start.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
+const CACHE = "essplan-v11";
+const FILES = ["./", "index.html", "app.js", "daten.js", "sync-config.js", "haushalt.js", "kalender.js", "start.js", "extras.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

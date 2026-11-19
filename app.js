@@ -142,6 +142,7 @@ function wstate(w) {
   let s = store.weeks[w.id];
   if (!s) s = store.weeks[w.id] = { sel: { ...w.defaultSel }, checked: {}, moods: [], have: {}, por: {} };
   if (!s.have || typeof s.have !== "object") s.have = {};
+  if (!s.extra || typeof s.extra !== "object") s.extra = {};
   if (!s.por || typeof s.por !== "object") s.por = {};
   if (!s.sel || typeof s.sel !== "object") s.sel = {};
   for (const k of DAYKEYS) if (!(k in s.sel) || (s.sel[k] !== "" && !isSpecial(s.sel[k]) && !w.byId[s.sel[k]])) s.sel[k] = w.defaultSel[k] || "";
@@ -177,6 +178,7 @@ async function connectSync() {
     if (typeof putzConnect === "function") putzConnect();
     if (typeof kalConnect === "function") kalConnect();
     if (typeof startConnect === "function") startConnect();
+    if (typeof extrasConnect === "function") extrasConnect();
     dbMod.onValue(dbMod.ref(db, ".info/connected"), s => { sync.mode = s.val() ? "online" : "offline"; renderSyncChip(); });
     let first = true;
     dbMod.onValue(dbMod.ref(db, sync.base), snap => {
@@ -188,7 +190,8 @@ async function connectSync() {
           checked: r.checked || {},
           moods: r.moods ? Object.keys(r.moods) : [],
           have: r.have || {},
-          por: r.por || {}
+          por: r.por || {},
+          extra: r.extra || {}
         };
       }
       if (first) {
@@ -202,7 +205,7 @@ async function connectSync() {
 }
 function remoteWeek(id) {
   const s = store.weeks[id];
-  return { sel: s.sel, checked: s.checked, have: s.have || {}, por: s.por || {}, moods: Object.fromEntries((s.moods || []).map(m => [m, true])) };
+  return { sel: s.sel, checked: s.checked, have: s.have || {}, por: s.por || {}, extra: s.extra || {}, moods: Object.fromEntries((s.moods || []).map(m => [m, true])) };
 }
 function pushWeek(id) {
   if (!sync.api) return;
@@ -245,8 +248,9 @@ function summary(w) {
   const buy = list.rows.filter(r => !r.have);
   const total = buy.reduce((a, r) => a + r.cost, 0);
   const saved = buy.reduce((a, r) => a + (r.statt ? r.statt - r.cost : 0), 0);
-  const all = buy.length + list.pantry.length;
-  const done = buy.filter(r => s.checked[r.key]).length + list.pantry.filter(p => s.checked[p.key]).length;
+  const ex = typeof extraRows === "function" ? extraRows(s) : [];
+  const all = buy.length + list.pantry.length + ex.length;
+  const done = buy.filter(r => s.checked[r.key]).length + list.pantry.filter(p => s.checked[p.key]).length + ex.filter(x => s.checked[x.key]).length;
   const open = buy.filter(r => !s.checked[r.key]).reduce((a, r) => a + r.cost, 0);
   const withK = days.filter(d => d.recipe.kcal);
   return {
@@ -495,7 +499,8 @@ function viewEinkauf(w) {
     let lastCat = null, body = "";
     for (const r of vis) {
       if (r.p && r.cat !== lastCat) { lastCat = r.cat; body += `<div class="subhead">${CATS[CAT_ORDER[r.cat]][1]}</div>`; }
-      body += r.p ? itemRow(r, s) : pantryRow(r, s);
+      if (r.extra && r.cat !== lastCat) { lastCat = r.cat; body += `<div class="subhead">${CATS[CAT_ORDER[r.cat]][1]}</div>`; }
+      body += r.extra ? extraRowHtml(r, s) : r.p ? itemRow(r, s) : pantryRow(r, s);
     }
     return `<div class="group"><h3>${title} ${extra}</h3>${vis.length ? body : `<div class="empty small">Alles erledigt.</div>`}</div>`;
   };
@@ -505,7 +510,9 @@ function viewEinkauf(w) {
       <span class="price num">${r.p.approx ? "ca. " : ""}${r.cost.toFixed(2)}${r.statt ? `<s>${r.statt.toFixed(2)}</s>` : ""}<button class="havebtn" data-have="${r.key}">Haben wir</button></span></label>`;
   const pantryRow = (p, s) => `<label class="item${s.checked[p.key] ? " checked" : ""}"><input type="checkbox" data-check="${p.key}"${s.checked[p.key] ? " checked" : ""}>
       <span><span class="name">${esc(p.name)}</span><br><span class="info">${p.days.join(", ")}</span></span><span></span></label>`;
-  const byStore = st => list.rows.filter(r => r.p.store === st && !r.have).sort((a, b) => (CAT_ORDER[a.cat] - CAT_ORDER[b.cat]) || a.p.name.localeCompare(b.p.name, "de"));
+  const exRows = typeof extraRows === "function" ? extraRows(s) : [];
+  const byStore = st => list.rows.filter(r => r.p.store === st && !r.have).concat(exRows.filter(x => x.store === st))
+    .sort((a, b) => (CAT_ORDER[a.cat] - CAT_ORDER[b.cat]) || (a.p ? a.p.name : a.name).localeCompare(b.p ? b.p.name : b.name, "de"));
   const haveRows = list.rows.filter(r => r.have);
   const sumOf = rows => chf(rows.reduce((a, r) => a + r.cost, 0));
   const mig = byStore("Migros"), aldi = byStore("Aldi");
@@ -517,9 +524,13 @@ function viewEinkauf(w) {
     <div class="spread"><label class="switch"><input type="checkbox" id="hideDone"${store.hideDone ? " checked" : ""}>Erledigte ausblenden</label>
       <span class="row"><button class="chip" data-act="copy">Kopieren</button><button class="chip" data-act="reset">Zurücksetzen</button></span></div>
     <div class="toast" id="copyMsg" aria-live="polite"></div>
-    ${groupHtml("Migros", mig, `<span class="num">${sumOf(mig)}</span>`)}
-    ${groupHtml("Aldi", aldi, `<span class="num">${sumOf(aldi)}</span>`)}
+    ${typeof addExtraHtml === "function" ? addExtraHtml(w) : ""}
+    ${groupHtml("Migros", mig, `<span class="num">${sumOf(mig.filter(r => r.p))}</span>`)}
+    ${groupHtml("Aldi", aldi, `<span class="num">${sumOf(aldi.filter(r => r.p))}</span>`)}
+    ${groupHtml("Coop", byStore("Coop"), "")}
+    ${groupHtml("Andere Läden", byStore("Andere"), "")}
     ${groupHtml("Grundvorrat", list.pantry, "<span>zu Hause prüfen</span>")}
+    ${typeof viewAusgaben === "function" && sm.done > 0 ? `<button class="btn soft block" data-xpaid="${w.id}">Einkauf bezahlt? Als Ausgabe eintragen</button>` : ""}
     ${haveRows.length ? `<div class="group"><h3>Schon zu Hause <span>nicht im Total</span></h3>${haveRows.map(r => `<div class="item haveitem"><span></span><span><span class="name">${esc(r.p.name)}</span><br><span class="info">${esc(r.p.label)} · Bedarf ${needText(r)}</span></span><span class="price"><button class="havebtn" data-unhave="${r.key}">Doch kaufen</button></span></div>`).join("")}</div>` : ""}
     <p class="footer">${esc(w.updated)}</p>`;
 }
@@ -674,11 +685,12 @@ $("cookSpeak").onclick = () => {
 /* ---------- Navigation ---------- */
 function activeWeek() { return weekById[ui.week] || currentWeek(); }
 const ESSEN_TABS = ["heute", "woche", "gerichte", "einkauf"];
+const HAUS_TABS = ["haushalt", "ausgaben", "umzug"];
 function go(tab, weekId) {
   if (tab === "essen") tab = ESSEN_TABS.includes(ui.tab) ? ui.tab : "heute";
-  ui.area = ESSEN_TABS.includes(tab) ? "essen" : tab;
+  ui.area = ESSEN_TABS.includes(tab) ? "essen" : HAUS_TABS.includes(tab) ? "haushalt" : tab;
   ui.tab = tab; if (weekId) ui.week = weekId;
-  const h = tab === "start" ? "zuhause" : ["heute", "haushalt", "kalender"].includes(tab) ? tab : tab + "-" + activeWeek().id;
+  const h = tab === "start" ? "zuhause" : ["heute", "kalender", ...HAUS_TABS].includes(tab) ? tab : tab + "-" + activeWeek().id;
   if (location.hash !== "#" + h) history.replaceState(null, "", "#" + h);
   render();
 }
@@ -687,10 +699,11 @@ function readHash() {
   const m = /^(woche|gerichte|einkauf)(?:-(.+))?$/.exec(h);
   if (m) { ui.tab = m[1]; if (m[2] && weekById[m[2]]) ui.week = m[2]; }
   else if (h === "haushalt" && typeof viewHaushalt === "function") ui.tab = "haushalt";
+  else if ((h === "ausgaben" || h === "umzug") && typeof viewAusgaben === "function") ui.tab = h;
   else if (h === "kalender" && typeof viewKalender === "function") ui.tab = "kalender";
   else if (h === "heute") ui.tab = "heute";
   else ui.tab = typeof viewStart === "function" ? "start" : "heute";
-  ui.area = ESSEN_TABS.includes(ui.tab) ? "essen" : ui.tab;
+  ui.area = ESSEN_TABS.includes(ui.tab) ? "essen" : HAUS_TABS.includes(ui.tab) ? "haushalt" : ui.tab;
 }
 window.addEventListener("hashchange", () => { readHash(); render(); });
 
@@ -705,7 +718,9 @@ function render(keepScroll = false) {
       `<button data-go="${k}" ${k === "einkauf" ? `data-week="${shopWeek().id}"` : ""} aria-current="${ui.tab === k ? "page" : "false"}">${l}${k === "einkauf" && left ? `<span class="count num">${left}</span>` : ""}</button>`).join("")}</nav>`;
   };
   v.innerHTML = ui.area === "start" && typeof viewStart === "function" ? viewStart()
-    : ui.area === "haushalt" && typeof viewHaushalt === "function" ? viewHaushalt()
+    : ui.tab === "ausgaben" && typeof viewAusgaben === "function" ? viewAusgaben()
+    : ui.tab === "umzug" && typeof viewUmzug === "function" ? viewUmzug()
+    : ui.area === "haushalt" && typeof viewHaushalt === "function" ? (typeof haushaltNav === "function" ? haushaltNav() : "") + viewHaushalt()
     : ui.area === "kalender" && typeof viewKalender === "function" ? viewKalender()
     : essenNav() + (ui.tab === "woche" ? viewWoche(w) : ui.tab === "gerichte" ? viewGerichte(w) : ui.tab === "einkauf" ? viewEinkauf(w) : viewHeute());
   document.querySelectorAll(".tabbar button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === ui.area ? "page" : "false"));
@@ -766,9 +781,11 @@ $("view").addEventListener("click", async e => {
   if (d.act === "reset") { wstate(w).checked = {}; patch(w.id, { checked: null }); return render(true); }
   if (d.act === "copy") {
     const s = wstate(w), list = shoppingList(w), lines = [];
-    for (const st of ["Migros", "Aldi"]) {
-      const rows = list.rows.filter(r => r.p.store === st && !s.checked[r.key]); if (!rows.length) continue;
-      lines.push(st.toUpperCase()); rows.forEach(r => lines.push(`- ${r.packs > 1 ? r.packs + " × " : ""}${r.p.name} (${r.p.label})`)); lines.push("");
+    for (const st of ["Migros", "Aldi", "Coop", "Andere"]) {
+      const rows = list.rows.filter(r => r.p.store === st && !s.checked[r.key] && !r.have);
+      const ex = (typeof extraRows === "function" ? extraRows(s) : []).filter(x => x.store === st && !s.checked[x.key]);
+      if (!rows.length && !ex.length) continue;
+      lines.push(st.toUpperCase()); rows.forEach(r => lines.push(`- ${r.packs > 1 ? r.packs + " × " : ""}${r.p.name} (${r.p.label})`)); ex.forEach(x => lines.push(`- ${x.name}`)); lines.push("");
     }
     try { await navigator.clipboard.writeText(lines.join("\n").trim()); $("copyMsg").textContent = "Kopiert. Du kannst die Liste z. B. in WhatsApp einfügen."; }
     catch (err) { $("copyMsg").textContent = "Kopieren ist hier nicht möglich."; }

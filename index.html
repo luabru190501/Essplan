@@ -547,6 +547,32 @@ main { gap: 22px; }
 .ring .fg { stroke: var(--ink); stroke-width: 4; }
 .ring circle { stroke-width: 4; }
 .avatar { font-family: var(--font-body); font-weight: 600; }
+
+/* Haushalt-Register, Ausgaben, Umzug, eigene Artikel */
+.seg3 { grid-template-columns: repeat(3, 1fr); }
+.saldo { display: grid; gap: 8px; padding: 22px 20px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
+.saldo h2 { font-size: 30px; }
+.saldo .big { font-family: var(--font-display); font-size: 46px; line-height: 1; }
+.saldo .btn { justify-self: start; }
+.xlist { border-top: 1px solid var(--line); }
+.xrow { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 12px 2px; cursor: pointer; }
+.xrow b { font-family: var(--font-display); font-weight: 400; font-size: 19px; }
+.xrow .xdate { font-size: 13px; color: var(--muted); }
+.xrow .num { text-align: right; font-weight: 600; }
+.catbars { display: grid; gap: 8px; }
+.catbars .fair { grid-template-columns: 130px 1fr auto; }
+.addx .row { flex-wrap: wrap; }
+.favs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.fav { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.fav button { border: 0; background: none; padding: 6px 4px 6px 12px; font: 500 14px var(--font-body); color: var(--ink); cursor: pointer; }
+.fav .favdel { padding: 6px 10px 6px 4px; color: var(--muted); }
+.fav.on { background: var(--ink); border-color: var(--ink); }
+.fav.on button { color: var(--bg); }
+.uitem { cursor: default; grid-template-columns: 26px minmax(0, 1fr) auto; }
+.uitem .name { line-height: 1.35; }
+.whochip { border: 0; background: none; cursor: pointer; display: inline-flex; gap: 2px; padding: 0; }
+.nobody { font-size: 12px; color: var(--muted); border: 1px dashed var(--line); border-radius: 999px; padding: 2px 8px; }
+.late { color: var(--tomato); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -582,5 +608,6 @@ main { gap: 22px; }
 <script src="haushalt.js"></script>
 <script src="kalender.js"></script>
 <script src="start.js"></script>
+<script src="extras.js"></script>
 </body>
 </html>
