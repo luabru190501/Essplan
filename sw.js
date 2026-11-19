@@ -1,6 +1,6 @@
-/* Macht die App offline nutzbar. Die Wochendaten werden immer zuerst frisch geladen. */
-const CACHE = "essplan-v2";
-const FILES = ["./", "index.html", "app.js", "daten.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
+/* Macht die App offline nutzbar. Immer zuerst frisch aus dem Internet, sonst aus dem Speicher. */
+const CACHE = "essplan-v3";
+const FILES = ["./", "index.html", "app.js", "daten.js", "sync-config.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
@@ -10,7 +10,7 @@ self.addEventListener("activate", e => {
 });
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
-  /* Zuerst aus dem Internet, bei fehlender Verbindung aus dem Speicher */
+  if (new URL(e.request.url).origin !== self.location.origin) return; /* Firebase, Schriften usw. nicht anfassen */
   e.respondWith(
     fetch(e.request).then(res => {
       const copy = res.clone();

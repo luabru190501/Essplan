@@ -1,14 +1,17 @@
-/* «Unser Essplan» – App-Logik. Die Wochendaten stehen in daten.js (const WOCHEN). */
+/* «Unser Essplan» – App-Logik.
+   Wochendaten: daten.js (const WOCHEN). Gemeinsames Speichern: sync-config.js (const SYNC). */
 
 const DAYS = [
   ["mo", "Mo", "Montag"], ["di", "Di", "Dienstag"], ["mi", "Mi", "Mittwoch"],
   ["do", "Do", "Donnerstag"], ["fr", "Fr", "Freitag"], ["sa", "Sa", "Samstag"], ["so", "So", "Sonntag"]
 ];
+const DAYKEYS = DAYS.map(d => d[0]);
 const WEEKDAYS = ["mo", "di", "mi", "do", "fr"];
 const PORTIONS = 4;
-const LONG = 45; /* Minuten: länger = Wochenend-Gericht */
+const LONG = 45;
+const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 
-const ICONS = {
+const MOOD_ICONS = {
   schnell: '<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>',
   guenstig: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.6-1-1.7-1.5-3-1.5-1.7 0-3 .9-3 2.2 0 3 6 1.6 6 4.6 0 1.3-1.3 2.2-3 2.2-1.4 0-2.6-.6-3.2-1.6M12 6v2M12 16v2"/></svg>',
   aufwendig: '<svg viewBox="0 0 24 24"><path d="M4 11h16v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M2 11h20M9 4c0 1.5 1 1.5 1 3M13 4c0 1.5 1 1.5 1 3"/></svg>',
@@ -17,74 +20,160 @@ const ICONS = {
   italienisch: '<svg viewBox="0 0 24 24"><path d="M4 13h16a8 8 0 0 1-16 0z"/><path d="M8 13c0-3 1-6 3-8M12 13c0-3 1-5 4-7M16 13c0-2 .5-3 2-4"/></svg>'
 };
 const MOODS = [
-  { id: "schnell", label: "Schnell" },
-  { id: "guenstig", label: "Günstig" },
-  { id: "aufwendig", label: "Gern länger kochen" },
-  { id: "vegi", label: "Mehr Vegi" },
-  { id: "protein", label: "Mehr Protein" },
-  { id: "italienisch", label: "Italienisch" }
+  ["schnell", "Schnell"], ["guenstig", "Günstig"], ["aufwendig", "Gern länger kochen"],
+  ["vegi", "Mehr Vegi"], ["protein", "Mehr Protein"], ["italienisch", "Italienisch"]
 ];
+const FILTERS = [["alle", "Alle"], ["schnell", "Schnell"], ["guenstig", "Günstig"], ["vegi", "Vegi"], ["protein", "Viel Protein"], ["italienisch", "Italienisch"], ["fleisch", "Fleisch & Fisch"], ["plan", "Im Plan"]];
+
+/* Illustrationen pro Gerichtsart */
+const ART = {
+  pasta: '<path d="M8 40h48a24 24 0 0 1-48 0z"/><path d="M14 40c2-6 6-8 10-6s6 4 10 2 6-6 10-4 6 4 8 8"/><path d="M20 34c0-8 4-14 8-18M30 34c0-10 3-16 6-20M40 36c1-8 4-14 8-16"/>',
+  soup: '<path d="M8 32h48a24 24 0 0 1-48 0z"/><path d="M4 32h56"/><path d="M22 22c0-4 4-4 4-8s-4-4-4-8M32 22c0-4 4-4 4-8s-4-4-4-8M42 22c0-4 4-4 4-8s-4-4-4-8"/>',
+  pan: '<circle cx="28" cy="34" r="18"/><path d="M46 34h14"/><circle cx="22" cy="30" r="4"/><circle cx="34" cy="36" r="4"/><path d="M20 40l4-2M30 26l3 2"/>',
+  eggs: '<circle cx="30" cy="34" r="20"/><path d="M50 34h12"/><circle cx="23" cy="30" r="6"/><circle cx="23" cy="30" r="2.5"/><circle cx="37" cy="38" r="6"/><circle cx="37" cy="38" r="2.5"/>',
+  fish: '<path d="M6 32c8-12 22-16 34-10 4 2 8 6 10 10-2 4-6 8-10 10-12 6-26 2-34-10z"/><path d="M50 32l10-10v20z"/><circle cx="18" cy="29" r="2"/><path d="M28 24c2 5 2 11 0 16"/>',
+  poultry: '<path d="M38 10c8 0 14 6 14 14 0 10-8 14-14 14-4 0-6 2-8 4l-8 8"/><path d="M38 10c-8 0-14 6-14 14 0 4 2 8 6 10"/><path d="M22 50a4 4 0 1 1-6-6 4 4 0 1 1 6 6zM14 48l6-6"/>',
+  oven: '<rect x="8" y="12" width="48" height="40" rx="6"/><rect x="14" y="24" width="36" height="22" rx="3"/><path d="M14 18h4M24 18h4M40 18h10"/><path d="M22 38c4-6 16-6 20 0"/>',
+  grain: '<path d="M8 32h48a24 24 0 0 1-48 0z"/><circle cx="20" cy="27" r="2"/><circle cx="28" cy="24" r="2"/><circle cx="36" cy="26" r="2"/><circle cx="44" cy="28" r="2"/><circle cx="32" cy="29" r="2"/><path d="M48 8l-8 18"/>',
+  salad: '<path d="M8 32h48a24 24 0 0 1-48 0z"/><path d="M14 32c0-8 6-14 12-14M24 32c2-10 10-16 18-14M36 32c2-6 8-10 14-8"/>',
+  plate: '<circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="14"/><path d="M4 12v14M8 12v14M6 26v26M60 12c-3 2-4 6-4 12h4v28"/>'
+};
+function artKind(r) {
+  const n = (r.name + " " + (r.tags || []).join(" ")).toLowerCase();
+  if (/shakshuka|\beier?\b|omelett|frittata/.test(n)) return "eggs";
+  if (/lachs|fisch|forelle|crevette|kabeljau|dorsch|fish/.test(n)) return "fish";
+  if (/suppe|minestrone|eintopf|zuppa|brühe|curry/.test(n)) return "soup";
+  if (/risotto|reis|couscous|bowl|quinoa|polenta/.test(n)) return "grain";
+  if (/ofen|gratin|lasagne|blech|auflauf|braten/.test(n)) return /poulet|huhn/.test(n) ? "poultry" : "oven";
+  if (/poulet|huhn|hähnchen/.test(n)) return "poultry";
+  if (/pasta|penne|spaghetti|gnocchi|nudel|tagliatelle|ravioli|orecchiette|fusilli|rigatoni/.test(n)) return "pasta";
+  if (/pfanne|wok|gebraten|tofu/.test(n)) return "pan";
+  if (/salat/.test(n)) return "salad";
+  return "plate";
+}
+function artColor(r) {
+  const t = r.tags || [];
+  if (t.includes("fisch")) return "ocean";
+  if (t.includes("poulet") || t.includes("rind")) return "saffron";
+  if (t.includes("italienisch")) return "tomato";
+  if (t.includes("vegetarisch")) return "basil";
+  return "plum";
+}
+function art(r, cls = "") {
+  if (!r) return `<div class="art ${cls}"><svg class="ico" viewBox="0 0 64 64" aria-hidden="true">${ART.plate}</svg></div>`;
+  return `<div class="art art-${artColor(r)} ${cls}" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><svg class="ico" viewBox="0 0 64 64">${ART[artKind(r)]}</svg></div>`;
+}
 
 /* ---------- Hilfen ---------- */
 const $ = id => document.getElementById(id);
-function chf(n) { return "CHF " + n.toFixed(2); }
-function fmtNum(n) { return (Math.round(n * 10) / 10).toString().replace(".", ","); }
-function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+const chf = n => "CHF " + n.toFixed(2);
+const fmtNum = n => (Math.round(n * 10) / 10).toString().replace(".", ",");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const enc = k => String(k).replace(/[.#$\[\]\/]/g, "_");
 function parseDate(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
-function dm(d) { return d.getDate() + "." + (d.getMonth() + 1) + "."; }
+const dm = d => d.getDate() + "." + (d.getMonth() + 1) + ".";
 function todayDate() { const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
-function kw(id) { const m = /KW(\d+)/.exec(id); return m ? m[1] : "?"; }
+const kw = id => { const m = /KW(\d+)/.exec(id); return m ? m[1] : "?"; };
+const dayIndex = d => (d.getDay() + 6) % 7;
 
 /* ---------- Wochen ---------- */
-const weeks = (typeof WOCHEN !== "undefined" ? WOCHEN : []).slice().sort((a, b) => b.start.localeCompare(a.start));
+const weeks = (typeof WOCHEN !== "undefined" && Array.isArray(WOCHEN) ? WOCHEN : []).slice().sort((a, b) => b.start.localeCompare(a.start));
 const weekById = Object.fromEntries(weeks.map(w => [w.id, w]));
 weeks.forEach(w => { w.byId = Object.fromEntries(w.recipes.map(r => [r.id, r])); });
-
 function weekStatus(w) {
-  const t = todayDate(), s = parseDate(w.start), e = addDays(s, 7);
-  if (t >= s && t < e) return "current";
-  if (t < s) return "next";
-  return "past";
+  const t = todayDate(), s = parseDate(w.start);
+  if (t >= s && t < addDays(s, 7)) return "current";
+  return t < s ? "next" : "past";
 }
+const statusLabel = w => ({ current: "Diese Woche", next: "Nächste Woche", past: "Vorbei" })[weekStatus(w)];
 function currentWeek() {
-  return weeks.find(w => weekStatus(w) === "current")
-    || weeks.filter(w => weekStatus(w) === "next").slice(-1)[0]
-    || weeks[0];
+  return weeks.find(w => weekStatus(w) === "current") || weeks.filter(w => weekStatus(w) === "next").slice(-1)[0] || weeks[0];
 }
-function todayKey() { return ["so", "mo", "di", "mi", "do", "fr", "sa"][new Date().getDay()]; }
+function dateOf(w, dayKey) { return addDays(parseDate(w.start), DAYKEYS.indexOf(dayKey)); }
 
 /* ---------- Zustand ---------- */
-const LS_KEY = "essplan-v2";
-let store = { weeks: {} };
-let doneSteps = {};
+const LS_KEY = "essplan-v3";
+let store = { weeks: {}, hideDone: false, seenWeeks: {} };
+let ui = { tab: "heute", week: null, filter: "alle", query: "", ingDone: {} };
+
 function wstate(w) {
-  if (!store.weeks[w.id]) store.weeks[w.id] = { sel: { ...w.defaultSel }, checked: {}, moods: [] };
-  const s = store.weeks[w.id];
-  for (const [k] of DAYS) if (!(k in s.sel) || (s.sel[k] !== "" && !w.byId[s.sel[k]])) s.sel[k] = w.defaultSel[k] || "";
-  if (!Array.isArray(s.moods)) s.moods = [];
+  let s = store.weeks[w.id];
+  if (!s) s = store.weeks[w.id] = { sel: { ...w.defaultSel }, checked: {}, moods: [] };
+  if (!s.sel || typeof s.sel !== "object") s.sel = {};
+  for (const k of DAYKEYS) if (!(k in s.sel) || (s.sel[k] !== "" && !w.byId[s.sel[k]])) s.sel[k] = w.defaultSel[k] || "";
+  if (!Array.isArray(s.moods)) s.moods = s.moods && typeof s.moods === "object" ? Object.keys(s.moods) : [];
   if (!s.checked || typeof s.checked !== "object") s.checked = {};
   return s;
 }
-function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch (e) { /* ignorieren */ } }
-function load() {
+function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch (e) { /* ignorieren */ } }
+function loadLocal() {
   try {
     const s = JSON.parse(localStorage.getItem(LS_KEY) || "null");
-    if (s && s.weeks && typeof s.weeks === "object") { store = s; return; }
-    const old = JSON.parse(localStorage.getItem("essplan-state") || "null");
-    if (old && old.week && weekById[old.week]) store.weeks[old.week] = { sel: old.sel || {}, checked: old.checked || {}, moods: [] };
+    if (s && s.weeks) { store = { weeks: s.weeks, hideDone: !!s.hideDone, seenWeeks: s.seenWeeks || {} }; return; }
+    const v2 = JSON.parse(localStorage.getItem("essplan-v2") || "null");
+    if (v2 && v2.weeks) for (const [id, x] of Object.entries(v2.weeks)) {
+      const checked = {}; for (const k of Object.keys(x.checked || {})) checked[enc(k)] = true;
+      store.weeks[id] = { sel: x.sel || {}, checked, moods: x.moods || [] };
+    }
   } catch (e) { /* ignorieren */ }
 }
 
+/* ---------- Gemeinsam speichern (Firebase Realtime Database) ---------- */
+const FB_APP = "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+const FB_DB = "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+let sync = { mode: "local", db: null, api: null, base: "" };
+function syncConfigured() { return typeof SYNC !== "undefined" && SYNC && SYNC.firebase && SYNC.haushalt; }
+async function connectSync() {
+  if (!syncConfigured()) { sync.mode = "local"; return; }
+  try {
+    const [appMod, dbMod] = await Promise.all([import(FB_APP), import(FB_DB)]);
+    const app = appMod.initializeApp(SYNC.firebase);
+    const db = dbMod.getDatabase(app);
+    sync = { mode: "connecting", db, api: dbMod, base: "haushalte/" + SYNC.haushalt + "/wochen" };
+    dbMod.onValue(dbMod.ref(db, ".info/connected"), s => { sync.mode = s.val() ? "online" : "offline"; renderSyncChip(); });
+    let first = true;
+    dbMod.onValue(dbMod.ref(db, sync.base), snap => {
+      const remote = snap.val() || {};
+      for (const [id, r] of Object.entries(remote)) {
+        if (!weekById[id]) continue;
+        store.weeks[id] = {
+          sel: r.sel || {},
+          checked: r.checked || {},
+          moods: r.moods ? Object.keys(r.moods) : []
+        };
+      }
+      if (first) {
+        first = false;
+        for (const [id, s] of Object.entries(store.weeks)) if (!remote[id] && weekById[id]) pushWeek(id);
+      }
+      saveLocal();
+      render(true);
+    }, () => { sync.mode = "local"; renderSyncChip(); });
+  } catch (e) { sync.mode = "local"; renderSyncChip(); }
+}
+function remoteWeek(id) {
+  const s = store.weeks[id];
+  return { sel: s.sel, checked: s.checked, moods: Object.fromEntries((s.moods || []).map(m => [m, true])) };
+}
+function pushWeek(id) {
+  if (!sync.api) return;
+  sync.api.set(sync.api.ref(sync.db, sync.base + "/" + id), remoteWeek(id)).catch(() => {});
+}
+function patch(id, p) {
+  saveLocal();
+  if (!sync.api) return;
+  sync.api.update(sync.api.ref(sync.db, sync.base + "/" + id), p).catch(() => {});
+}
+
 /* ---------- Berechnungen ---------- */
-function recipeItems(w, r, sel) {
+function recipeItems(r, sel) {
   let items = r.items.slice();
   if (r.needs && !Object.values(sel).includes(r.needs) && r.fallback) items = items.concat(r.fallback);
   return items;
 }
-function recipeCost(w, r, sel) {
-  return recipeItems(w, r, sel).reduce((sum, [k, q]) => sum + q / w.products[k].pack * w.products[k].price, 0);
-}
+const recipeCost = (w, r, sel = {}) => recipeItems(r, sel).reduce((a, [k, q]) => a + q / w.products[k].pack * w.products[k].price, 0);
+const perPortion = (w, r, sel) => recipeCost(w, r, sel) / PORTIONS;
 function selectedDays(w) {
   const s = wstate(w);
   return DAYS.filter(([k]) => s.sel[k] && w.byId[s.sel[k]]).map(([k, sh, l]) => ({ key: k, short: sh, long: l, recipe: w.byId[s.sel[k]] }));
@@ -92,31 +181,29 @@ function selectedDays(w) {
 function shoppingList(w) {
   const s = wstate(w), need = {}, usedBy = {}, pantry = {};
   for (const d of selectedDays(w)) {
-    for (const [k, q] of recipeItems(w, d.recipe, s.sel)) {
-      need[k] = (need[k] || 0) + q;
-      (usedBy[k] = usedBy[k] || new Set()).add(d.short);
-    }
+    for (const [k, q] of recipeItems(d.recipe, s.sel)) { need[k] = (need[k] || 0) + q; (usedBy[k] = usedBy[k] || new Set()).add(d.short); }
     for (const x of d.recipe.pantry || []) (pantry[x] = pantry[x] || new Set()).add(d.short);
   }
   const rows = Object.keys(need).map(k => {
-    const p = w.products[k];
-    const packs = Math.max(1, Math.ceil(need[k] / p.pack - 1e-9));
-    return { key: k, p, need: need[k], packs, cost: packs * p.price, statt: p.statt ? packs * p.statt : null, days: [...usedBy[k]] };
+    const p = w.products[k], packs = Math.max(1, Math.ceil(need[k] / p.pack - 1e-9));
+    return { key: enc(k), p, need: need[k], packs, cost: packs * p.price, statt: p.statt ? packs * p.statt : null, days: [...usedBy[k]] };
   });
-  return { rows, pantry };
+  const pant = Object.keys(pantry).sort((a, b) => a.localeCompare(b, "de")).map(n => ({ key: enc("p:" + n), name: n, days: [...pantry[n]] }));
+  return { rows, pantry: pant };
 }
 function summary(w) {
-  const list = shoppingList(w), s = wstate(w);
+  const s = wstate(w), list = shoppingList(w), days = selectedDays(w);
   const total = list.rows.reduce((a, r) => a + r.cost, 0);
   const saved = list.rows.reduce((a, r) => a + (r.statt ? r.statt - r.cost : 0), 0);
-  const days = selectedDays(w);
-  const portions = days.length * PORTIONS;
-  const all = list.rows.length + Object.keys(list.pantry).length;
-  const done = list.rows.filter(r => s.checked[r.key]).length + Object.keys(list.pantry).filter(n => s.checked["p:" + n]).length;
-  const prot = days.length ? days.reduce((a, d) => a + (d.recipe.protein || 0), 0) / days.length : 0;
-  const fish = days.filter(d => d.recipe.tags.includes("fisch")).length;
-  const vegi = days.filter(d => d.recipe.tags.includes("vegetarisch")).length;
-  return { list, total, saved, portions, all, done, prot, fish, vegi, days };
+  const all = list.rows.length + list.pantry.length;
+  const done = list.rows.filter(r => s.checked[r.key]).length + list.pantry.filter(p => s.checked[p.key]).length;
+  const open = list.rows.filter(r => !s.checked[r.key]).reduce((a, r) => a + r.cost, 0);
+  return {
+    list, days, total, saved, all, done, open, portions: days.length * PORTIONS,
+    prot: days.length ? days.reduce((a, d) => a + (d.recipe.protein || 0), 0) / days.length : 0,
+    fish: days.filter(d => d.recipe.tags.includes("fisch")).length,
+    vegi: days.filter(d => d.recipe.tags.includes("vegetarisch")).length
+  };
 }
 function needText(row) {
   const u = row.p.unit, n = row.need;
@@ -127,19 +214,12 @@ function needText(row) {
   return fmtNum(n) + " Stück";
 }
 
-function sourceHtml(r) {
-  if (!r.source || !r.source.url || !/^https:\/\//.test(r.source.url)) return "";
-  return `<a class="src" href="${esc(r.source.url)}" target="_blank" rel="noopener">Originalrezept auf ${esc(r.source.name || "der Webseite")} ↗</a>`;
-}
-const WUNSCH_URL = "https://github.com/luabru190501/Essplan/issues/new?title=" + encodeURIComponent("Wunsch für nächste Woche") + "&body=" + encodeURIComponent("Schreib hier deinen Wunsch, z. B. «mehr Curry», «weniger Pasta», «Lieblingsgericht: …». Dann unten auf «Create» tippen.");
-
 /* ---------- Plan nach Lust ---------- */
 function planByMood(w, moods) {
   if (!moods.length) return { ...w.defaultSel };
   const rs = w.recipes;
-  const cost = r => recipeCost(w, r, {}) / PORTIONS;
   const range = f => { const v = rs.map(f); const lo = Math.min(...v), hi = Math.max(...v); return r => hi > lo ? (f(r) - lo) / (hi - lo) : 0.5; };
-  const cN = range(cost), pN = range(r => r.protein || 0), tN = range(r => r.minutes || 30);
+  const cN = range(r => perPortion(w, r)), pN = range(r => r.protein || 0), tN = range(r => r.minutes || 30);
   const defaults = new Set(Object.values(w.defaultSel));
   const score = r => {
     let s = defaults.has(r.id) ? 0.3 : 0;
@@ -157,327 +237,433 @@ function planByMood(w, moods) {
     if (chosen.includes(r)) return false;
     if (r.tags.includes("fisch") && chosen.some(c => c.tags.includes("fisch"))) return false;
     if (r.needs && !chosen.some(c => c.id === r.needs)) return false;
-    const longs = chosen.filter(c => c.minutes > LONG).length;
-    if (r.minutes > LONG && longs >= 2) return false;
+    if (r.minutes > LONG && chosen.filter(c => c.minutes > LONG).length >= 2) return false;
     return true;
   };
   let progress = true;
   while (chosen.length < 7 && progress) {
     progress = false;
-    for (const r of sorted) { if (ok(r)) { chosen.push(r); progress = true; break; } }
+    for (const r of sorted) if (ok(r)) { chosen.push(r); progress = true; break; }
   }
-  /* Tage verteilen: lange Gerichte aufs Wochenende, abhängige Gerichte einen Tag später */
-  const sel = Object.fromEntries(DAYS.map(([k]) => [k, ""]));
+  const sel = Object.fromEntries(DAYKEYS.map(k => [k, ""]));
   const longs = chosen.filter(r => r.minutes > LONG).sort((a, b) => (a.needs ? 1 : 0) - (b.needs ? 1 : 0));
-  const shorts = chosen.filter(r => r.minutes <= LONG);
-  const weekend = ["sa", "so"];
-  longs.forEach((r, i) => { sel[weekend[i]] = r.id; });
-  const free = [...WEEKDAYS, ...weekend.filter(d => !sel[d])];
-  shorts.forEach((r, i) => { if (free[i]) sel[free[i]] = r.id; });
+  longs.forEach((r, i) => { sel[["sa", "so"][i]] = r.id; });
+  const free = [...WEEKDAYS, ...["sa", "so"].filter(d => !sel[d])];
+  chosen.filter(r => r.minutes <= LONG).forEach((r, i) => { if (free[i]) sel[free[i]] = r.id; });
   return sel;
 }
 
-/* ---------- Ansichten ---------- */
-let route = { view: "home" };
-function parseHash() {
-  const h = decodeURIComponent(location.hash.slice(1));
-  const m = /^w-(.+?)(?:-(plan|gerichte|rezepte|einkauf))?$/.exec(h);
-  if (m && weekById[m[1]]) return { view: "week", id: m[1], tab: m[2] || "plan" };
-  return { view: "home" };
+/* ---------- Bausteine ---------- */
+function ringSvg(pct, size = 54) {
+  const r = 22, c = 2 * Math.PI * r;
+  return `<svg class="ring" viewBox="0 0 54 54" width="${size}" height="${size}" aria-hidden="true"><circle class="bg" cx="27" cy="27" r="${r}"/><circle class="fg" cx="27" cy="27" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct)}"/></svg>`;
 }
-function go(r, opts = {}) {
-  route = r;
-  const hash = r.view === "home" ? "start" : "w-" + r.id + "-" + r.tab;
-  if (location.hash !== "#" + hash) history.replaceState(null, "", "#" + hash);
-  render(opts);
+function weekbar(active) {
+  return `<div class="weekbar" role="group" aria-label="Woche wählen">${weeks.slice().reverse().map(w => {
+    const s = parseDate(w.start);
+    return `<button class="wk" data-week="${w.id}" aria-pressed="${w.id === active.id}"><b>KW ${kw(w.id)}</b><span>${statusLabel(w)} · ${dm(s)}</span></button>`;
+  }).join("")}</div>`;
 }
-window.addEventListener("hashchange", () => { route = parseHash(); render(); });
-
-function render(opts = {}) {
-  const el = $("app");
-  if (!weeks.length) { el.innerHTML = `<div class="card">Noch keine Wochendaten vorhanden.</div>`; return; }
-  el.innerHTML = route.view === "home" ? homeHtml() : weekHtml(weekById[route.id], route.tab, opts.openDay);
-  if (opts.openDay) { const d = $("rec-" + opts.openDay); if (d) d.scrollIntoView({ block: "start" }); }
-  else if (!opts.keepScroll) window.scrollTo(0, 0);
+function syncChipHtml() {
+  const m = sync.mode;
+  const txt = m === "online" ? "Gemeinsam" : m === "offline" ? "Offline" : m === "connecting" ? "Verbinde …" : "Nur dieses Handy";
+  const cls = m === "online" ? "on" : m === "offline" ? "off" : "";
+  return `<button class="sync ${cls}" id="syncChip" data-act="syncinfo"><i></i>${txt}</button>`;
 }
-
+function renderSyncChip() { const el = $("syncChip"); if (el) el.outerHTML = syncChipHtml(); }
 function greeting() { const h = new Date().getHours(); return h < 11 ? "Guten Morgen" : h < 17 ? "Hallo" : "Guten Abend"; }
-
-function moodsHtml(w) {
+function moodPanel(w) {
   const s = wstate(w);
-  return `<div class="moods" role="group" aria-label="Worauf habt ihr Lust?">${MOODS.map(m =>
-    `<button class="mood" data-mood="${m.id}" data-week="${w.id}" aria-pressed="${s.moods.includes(m.id)}">${ICONS[m.id]}<span>${m.label}</span></button>`).join("")}</div>
-    <button class="primary" data-plan="${w.id}">${s.moods.length ? "Plan nach Lust erstellen" : "Vorschlag der Woche verwenden"}</button>
-    <div class="toast" id="toast" aria-live="polite"></div>`;
+  return `<div class="card"><div class="spread"><h2>Worauf habt ihr Lust?</h2></div>
+    <div class="moods" role="group" aria-label="Lust">${MOODS.map(([id, l]) => `<button class="mood" data-mood="${id}" aria-pressed="${s.moods.includes(id)}">${MOOD_ICONS[id]}<span>${l}</span></button>`).join("")}</div>
+    <button class="btn primary block" data-act="plan">${s.moods.length ? "Woche nach Lust zusammenstellen" : "Vorschlag der Woche verwenden"}</button>
+    <div class="toast" id="toast" aria-live="polite"></div></div>`;
 }
 
-function homeHtml() {
-  const w = currentWeek(), st = weekStatus(w), s = wstate(w), sm = summary(w);
-  const tk = todayKey(), r = st === "current" && s.sel[tk] ? w.byId[s.sel[tk]] : null;
-  const d = new Date();
-  const dateStr = DAYS[(d.getDay() + 6) % 7][2] + ", " + d.getDate() + ". " + ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"][d.getMonth()];
-  let today;
-  if (st !== "current") {
-    today = `<div class="today"><span class="eyebrow">Als Nächstes</span><h2>Woche ab ${dm(parseDate(w.start))}</h2><div class="btns"><button class="btn-light" data-goweek="${w.id}" data-tab="plan">Plan ansehen</button></div></div>`;
-  } else if (r) {
-    today = `<div class="today"><span class="eyebrow">Heute auf dem Tisch</span><h2>${esc(r.name)}</h2>
-      <div class="facts"><span class="fact">${esc(r.time)}</span>${r.protein ? `<span class="fact">ca. ${r.protein} g Protein</span>` : ""}<span class="fact num">${chf(recipeCost(w, r, s.sel) / PORTIONS)} pro Portion</span></div>
-      <div class="btns"><button class="btn-light" data-cookday="${tk}" data-week="${w.id}">Jetzt kochen</button><button class="btn-outline-light" data-goweek="${w.id}" data-tab="rezepte" data-day="${tk}">Rezept</button></div></div>`;
-  } else {
-    today = `<div class="today"><span class="eyebrow">Heute</span><h2>Kein Kochen geplant</h2><div class="btns"><button class="btn-light" data-goweek="${w.id}" data-tab="plan">Gericht wählen</button></div></div>`;
-  }
-  const pct = sm.all ? Math.round(sm.done / sm.all * 100) : 0;
-  const list = weeks.map(x => {
-    const xs = weekStatus(x), start = parseDate(x.start);
-    const label = xs === "current" ? "Diese Woche" : xs === "next" ? "Nächste Woche" : "Vorbei";
-    const cls = xs === "next" ? "next" : xs === "past" ? "past" : "";
-    return `<button class="week-row ${xs === "past" ? "past" : ""}" data-goweek="${x.id}" data-tab="plan">
-      <span class="week-badge"><span>KW<big>${kw(x.id)}</big></span></span>
-      <span><strong>${dm(start)} – ${dm(addDays(start, 6))}</strong><br><span class="small muted num">${chf(summary(x).total)} · ${selectedDays(x).length} Gerichte</span></span>
-      <span class="status ${cls}">${label}</span></button>`;
-  }).join("");
+/* ---------- Heute ---------- */
+function viewHeute() {
+  const w = currentWeek(), s = wstate(w), sm = summary(w), st = weekStatus(w);
+  const now = new Date(), tk = DAYKEYS[dayIndex(now)];
+  const r = st === "current" && s.sel[tk] ? w.byId[s.sel[tk]] : null;
+  const prevKey = DAYKEYS[dayIndex(now) - 1];
+  const yesterday = st === "current" && prevKey && s.sel[prevKey] ? w.byId[s.sel[prevKey]] : null;
+  const tomorrowKey = DAYKEYS[dayIndex(now) + 1];
+  const tomorrow = st === "current" && tomorrowKey && s.sel[tomorrowKey] ? w.byId[s.sel[tomorrowKey]] : null;
   const nxt = weeks.find(x => weekStatus(x) === "next" && x !== w);
-  const banner = nxt ? `<button class="banner" data-goweek="${nxt.id}" data-tab="gerichte"><span><strong>Neu: ${nxt.recipes.length} Gerichte für nächste Woche</strong><br><span class="small">Ab ${dm(parseDate(nxt.start))} · jetzt auswählen</span></span><span aria-hidden="true">›</span></button>` : "";
+
+  let hero;
+  if (st !== "current") {
+    hero = `<div class="hero">${art(w.byId[w.defaultSel.mo])}<div class="hero-body"><span class="eyebrow">Als Nächstes</span><h2>Woche ab ${dm(parseDate(w.start))}</h2><div class="btns"><button class="btn primary" data-go="woche" data-week="${w.id}">Plan ansehen</button></div></div></div>`;
+  } else if (r) {
+    hero = `<div class="hero">${art(r)}<div class="hero-body">
+      <span class="eyebrow">Heute auf dem Tisch</span><h2>${esc(r.name)}</h2>
+      <div class="facts"><span class="fact">${esc(r.time)}</span>${r.protein ? `<span class="fact">${r.protein} g Protein</span>` : ""}<span class="fact num">${chf(perPortion(w, r, s.sel))} / Portion</span></div>
+      <div class="btns"><button class="btn primary" data-cook="${tk}" data-week="${w.id}">Jetzt kochen</button><button class="btn soft" data-recipe="${r.id}" data-week="${w.id}">Rezept</button></div></div></div>`;
+  } else {
+    hero = `<div class="hero">${art(null)}<div class="hero-body"><span class="eyebrow">Heute</span><h2>Heute ist kochfrei</h2><p class="muted">Lust auf etwas? Wähle ein Gericht für heute.</p><div class="btns"><button class="btn primary" data-swap="${tk}" data-week="${w.id}">Gericht wählen</button></div></div></div>`;
+  }
+  const lunchIco = '<svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="3"/><path d="M8 8V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/></svg>';
+  const lunch = yesterday ? `<div class="lunch">${lunchIco}<div><b>Lunchbox heute</b><div class="small">2 Portionen ${esc(yesterday.name)} von gestern.</div></div></div>`
+    : r ? `<div class="lunch">${lunchIco}<div><b>Heute Abend 2 Portionen einpacken</b><div class="small">Die sind eure Lunchbox für morgen.</div></div></div>` : "";
+
+  const strip = st === "current" || st === "next" ? `<div class="section"><div class="section-head"><h2>Diese Woche</h2><button class="chip" data-go="woche" data-week="${w.id}">Alle Tage</button></div>
+    <div class="strip">${DAYS.map(([k, sh]) => {
+      const x = w.byId[s.sel[k]], isT = st === "current" && k === tk;
+      return `<button class="daychip${isT ? " today" : ""}${x ? "" : " free"}" ${x ? `data-recipe="${x.id}"` : `data-swap="${k}"`} data-week="${w.id}">${art(x)}<b>${sh} ${dm(dateOf(w, k))}</b><span>${x ? esc(x.name) : "frei"}</span></button>`;
+    }).join("")}</div></div>` : "";
+
+  const banner = nxt ? `<button class="banner" data-go="gerichte" data-week="${nxt.id}"><span class="spark">${nxt.recipes.length}</span><span><b>Neue Gerichte für nächste Woche</b><span class="small">Ab ${dm(parseDate(nxt.start))} · jetzt aussuchen</span></span><span class="go" aria-hidden="true">›</span></button>` : "";
+  const pct = sm.all ? sm.done / sm.all : 0;
+  const d = new Date();
+  const wunsch = "https://github.com/luabru190501/Essplan/issues/new?title=" + encodeURIComponent("Wunsch für nächste Woche") + "&body=" + encodeURIComponent("Schreib hier deinen Wunsch, z. B. «mehr Curry», «weniger Pasta», «Lieblingsgericht: …». Dann unten auf «Create» tippen.");
+
   return `
-    <div class="hello"><span class="eyebrow">${dateStr}</span><h1>${greeting()}!</h1></div>
+    <div class="top"><div><span class="eyebrow">${DAYS[dayIndex(d)][2]}, ${d.getDate()}. ${MONTHS[d.getMonth()]}</span><h1>${greeting()}!</h1></div>${syncChipHtml()}</div>
     ${banner}
-    ${today}
-    <div class="quick">
-      <button class="tile" data-goweek="${w.id}" data-tab="plan"><span class="small muted">Diese Woche</span><b class="num">${chf(sm.total)}</b><span class="small muted num">${sm.portions ? chf(sm.total / sm.portions) : "–"} pro Portion</span></button>
-      <button class="tile" data-goweek="${w.id}" data-tab="einkauf"><span class="small muted">Einkauf</span><b class="num">${sm.done}/${sm.all}</b><span class="bar"><i style="width:${pct}%"></i></span></button>
+    ${hero}
+    ${lunch}
+    ${tomorrow ? `<button class="pick" data-recipe="${tomorrow.id}" data-week="${w.id}">${art(tomorrow)}<span><span>Morgen</span><b>${esc(tomorrow.name)}</b></span><span class="muted small">${esc(tomorrow.time)}</span></button>` : ""}
+    <div class="tiles">
+      <button class="tile" data-go="einkauf" data-week="${w.id}"><span class="spread"><span><span class="small muted">Einkauf</span><b class="num">${sm.done}/${sm.all}</b></span>${ringSvg(pct)}</span><span class="small muted num">noch ${chf(sm.open)}</span></button>
+      <button class="tile" data-go="woche" data-week="${w.id}"><span class="small muted">Woche total</span><b class="num">${chf(sm.total)}</b><span class="small muted num">${sm.portions ? chf(sm.total / sm.portions) : "–"} pro Portion</span></button>
     </div>
-    <div class="card section"><div><span class="eyebrow">KW ${kw(w.id)}</span><h2>Worauf habt ihr Lust?</h2></div>
-      <p class="small muted" style="margin:0">Wählt eine oder mehrere Richtungen, dann stelle ich die Woche aus den Rezepten dieser Woche neu zusammen.</p>
-      ${moodsHtml(w)}</div>
-    <div class="section"><h2>Alle Wochen</h2><div class="weeks">${list}</div></div>
-    <div class="card section"><h3>Wunsch für nächste Woche</h3>
-      <p class="small muted" style="margin:0">Mehr Curry, weniger Pasta, ein Lieblingsgericht? Schreib es hier hinein. Der nächste Plan berücksichtigt es.</p>
-      <a class="primary linkish" href="${WUNSCH_URL}" target="_blank" rel="noopener">Wunsch schreiben</a></div>
-    <p class="footer">Alle Rezepte ohne Schweinefleisch · 4 Portionen pro Gericht, davon 2 zum Mitnehmen.</p>`;
+    ${strip}
+    <div class="card"><h3>Wunsch für nächste Woche</h3><p class="small muted">Mehr Curry, weniger Pasta, ein Lieblingsgericht? Der nächste Plan berücksichtigt es.</p>
+      <a class="btn soft block" style="text-align:center;text-decoration:none" href="${wunsch}" target="_blank" rel="noopener">Wunsch schreiben</a></div>
+    <p class="footer">Alle Rezepte ohne Schweinefleisch · 4 Portionen pro Gericht, 2 davon zum Mitnehmen</p>`;
 }
 
-function weekHtml(w, tab, openDay) {
-  const sm = summary(w), start = parseDate(w.start);
-  const tabs = [["plan", "Plan"], ["gerichte", "Gerichte"], ["rezepte", "Rezepte"], ["einkauf", "Einkauf"]];
-  const pills = [`<span class="pill">Ohne Schweinefleisch</span>`, `<span class="pill">${sm.vegi}× vegi</span>`, `<span class="pill">ca. ${Math.round(sm.prot)} g Protein pro Portion</span>`];
-  pills.push(sm.fish > 1 ? `<span class="pill warn">Fisch ${sm.fish}×, lieber höchstens 1×</span>` : `<span class="pill">Fisch ${sm.fish}×</span>`);
-  const body = tab === "rezepte" ? rezepteHtml(w, openDay) : tab === "einkauf" ? einkaufHtml(w) : tab === "gerichte" ? gerichteHtml(w) : planHtml(w);
+/* ---------- Woche ---------- */
+function viewWoche(w) {
+  const s = wstate(w), sm = summary(w), st = weekStatus(w), tk = st === "current" ? DAYKEYS[dayIndex(new Date())] : "";
+  const start = parseDate(w.start);
+  const badges = [`<span class="badge">${sm.vegi}× vegi</span>`, `<span class="badge">Ø ${Math.round(sm.prot)} g Protein</span>`,
+    sm.fish > 1 ? `<span class="badge warn">Fisch ${sm.fish}×, lieber 1×</span>` : `<span class="badge">Fisch ${sm.fish}×</span>`, `<span class="badge">ohne Schweinefleisch</span>`];
   return `
-    <div class="topbar"><button class="back" data-home>‹ Übersicht</button><span class="eyebrow">KW ${kw(w.id)} · ${weekStatus(w) === "current" ? "Diese Woche" : weekStatus(w) === "next" ? "Nächste Woche" : "Vorbei"}</span></div>
-    <div><h1>${dm(start)} – ${dm(addDays(start, 6))}</h1><div class="small muted">${esc(w.label)}</div></div>
+    <div class="top"><div><span class="eyebrow">${statusLabel(w)}</span><h1>${dm(start)} – ${dm(addDays(start, 6))}</h1></div>${syncChipHtml()}</div>
+    ${weeks.length > 1 ? weekbar(w) : ""}
     <div class="stats">
-      <div class="stat"><b class="num">${chf(sm.total)}</b><span>Einkauf total</span></div>
+      <div class="stat"><b class="num">${chf(sm.total)}</b><span>Einkauf</span></div>
       <div class="stat"><b class="num">${sm.portions ? chf(sm.total / sm.portions) : "–"}</b><span>pro Portion</span></div>
       <div class="stat"><b class="num">${chf(sm.saved)}</b><span>gespart</span></div>
     </div>
-    <div class="pills">${pills.join("")}</div>
-    ${weekStatus(w) === "past" ? `<div class="note">Diese Woche ist vorbei. Die Preise und Aktionen stimmen nicht mehr, die Rezepte kannst du aber weiter nutzen.</div>` : ""}
-    <nav class="tabs-wrap"><div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" data-tabgo="${k}" data-week="${w.id}" aria-selected="${tab === k}">${l}</button>`).join("")}</div></nav>
-    <section class="section">${body}</section>
+    <div class="badges">${badges.join("")}</div>
+    ${st === "past" ? `<div class="note">Diese Woche ist vorbei. Preise und Aktionen stimmen nicht mehr, die Rezepte kannst du weiter nutzen.</div>` : ""}
+    ${moodPanel(w)}
+    <div class="section"><h2>Euer Plan</h2><div class="days">${DAYS.map(([k, sh]) => {
+      const r = w.byId[s.sel[k]];
+      const needsNote = r && r.needs && !Object.values(s.sel).includes(r.needs) ? `<span>+ Zusatzzutat, weil ${esc(w.byId[r.needs] ? w.byId[r.needs].name : "das Vorgericht")} fehlt</span>` : "";
+      return `<div class="day${k === tk ? " today" : ""}${r ? "" : " free"}">
+        <div class="date"><b>${sh}</b><span>${dm(dateOf(w, k))}</span></div>
+        ${art(r)}
+        <div class="info">${r ? `<button class="name" data-recipe="${r.id}" data-week="${w.id}">${esc(r.name)}</button>
+          <div class="meta"><span>${esc(r.time)}</span><span class="num">${chf(perPortion(w, r, s.sel))}</span>${r.protein ? `<span>${r.protein} g Protein</span>` : ""}${needsNote}</div>`
+          : `<b class="muted">Kochfrei</b>`}
+          <button class="swap" data-swap="${k}" data-week="${w.id}">${r ? "Tauschen" : "Gericht wählen"}</button></div></div>`;
+    }).join("")}</div></div>
     <p class="footer">${esc(w.updated)}</p>`;
 }
 
-function planHtml(w) {
-  const s = wstate(w), tk = weekStatus(w) === "current" ? todayKey() : "";
-  let html = `<div class="card section"><h3>Worauf habt ihr Lust?</h3>${moodsHtml(w)}</div>`;
-  for (const [k, short, long] of DAYS) {
-    const cur = s.sel[k], r = w.byId[cur];
-    html += `<div class="card day${k === tk ? " is-today" : ""}"><div class="day-label" aria-hidden="true">${short}</div><div class="day-body">
-      <label class="small muted" for="sel-${k}">${long}${k === tk ? " · heute" : ""}</label>
-      <select id="sel-${k}" data-day="${k}" data-week="${w.id}">
-        <option value=""${cur === "" ? " selected" : ""}>Kein Kochen (auswärts, Reste)</option>
-        ${w.recipes.map(o => `<option value="${o.id}"${o.id === cur ? " selected" : ""}>${esc(o.name)}</option>`).join("")}
-      </select>
-      ${r ? `<div class="meta"><span>${esc(r.time)}</span><span class="num">${chf(recipeCost(w, r, s.sel) / PORTIONS)}/Portion</span>${r.protein ? `<span>ca. ${r.protein} g Protein</span>` : ""}<button class="linkbtn" data-goweek="${w.id}" data-tab="rezepte" data-day="${k}">Rezept</button></div>` : ""}
-      ${r && r.needs && !Object.values(s.sel).includes(r.needs) ? `<div class="note">Ohne «${esc(w.byId[r.needs] ? w.byId[r.needs].name : r.needs)}» kommt eine Zusatzzutat auf die Einkaufsliste.</div>` : ""}
-    </div></div>`;
-  }
-  return html;
-}
-
-let gFilter = "alle";
-const GFILTERS = [["alle", "Alle"], ["schnell", "Schnell"], ["guenstig", "Günstig"], ["vegi", "Vegi"], ["protein", "Viel Protein"], ["italienisch", "Italienisch"], ["fleisch", "Fleisch & Fisch"]];
-function gMatch(w, r) {
-  switch (gFilter) {
+/* ---------- Gerichte ---------- */
+function matchFilter(w, r, s) {
+  switch (ui.filter) {
     case "schnell": return r.minutes <= 25;
-    case "guenstig": return recipeCost(w, r, {}) / PORTIONS <= 3;
+    case "guenstig": return perPortion(w, r) <= 3;
     case "vegi": return r.tags.includes("vegetarisch");
     case "protein": return (r.protein || 0) >= 30;
     case "italienisch": return r.tags.includes("italienisch");
     case "fleisch": return !r.tags.includes("vegetarisch");
+    case "plan": return Object.values(s.sel).includes(r.id);
     default: return true;
   }
 }
-function gerichteHtml(w) {
+function matchQuery(r) {
+  const q = ui.query.trim().toLowerCase();
+  if (!q) return true;
+  return (r.name + " " + r.ingredients.join(" ")).toLowerCase().includes(q);
+}
+function dishGrid(w) {
   const s = wstate(w);
-  const daysOf = id => DAYS.filter(([k]) => s.sel[k] === id).map(d => d[1]);
-  const list = w.recipes.filter(r => gMatch(w, r));
-  return `<div class="card section"><h3>Alle ${w.recipes.length} Gerichte dieser Woche</h3>
-      <p class="small muted" style="margin:0">Legt ein Gericht auf einen Tag, dann erscheint es im Plan, bei den Rezepten und auf der Einkaufsliste.</p>
-      <div class="chips">${GFILTERS.map(([v, l]) => `<button class="chip" data-gfilter="${v}" data-week="${w.id}" aria-pressed="${gFilter === v}">${l}</button>`).join("")}</div></div>
-    ${list.length ? "" : `<div class="card">Kein Gericht passt zu diesem Filter.</div>`}
-    ${list.map(r => {
-      const on = daysOf(r.id);
-      return `<div class="card dish${on.length ? " picked" : ""}">
-        <div class="row"><h3>${esc(r.name)}</h3>${on.length ? `<span class="status">${on.join(", ")}</span>` : ""}</div>
-        <div class="meta"><span>${esc(r.time)}</span><span class="num">${chf(recipeCost(w, r, {}) / PORTIONS)}/Portion</span>${r.protein ? `<span>ca. ${r.protein} g Protein</span>` : ""}${r.tags.filter(t => t !== "schnell").map(t => `<span class="pill">${t}</span>`).join("")}</div>
-        ${sourceHtml(r)}
-        <label class="small muted" for="pick-${r.id}">Auf Tag legen</label>
-        <select id="pick-${r.id}" data-pick="${r.id}" data-week="${w.id}">
-          <option value="">Tag wählen …</option>
-          ${DAYS.map(([k, , l]) => `<option value="${k}">${l}${s.sel[k] && w.byId[s.sel[k]] ? " (statt " + esc(w.byId[s.sel[k]].name) + ")" : ""}</option>`).join("")}
-        </select>
-      </div>`;
-    }).join("")}`;
+  const list = w.recipes.filter(r => matchFilter(w, r, s) && matchQuery(r));
+  if (!list.length) return `<div class="empty">Kein Gericht passt. Probier einen anderen Filter.</div>`;
+  return `<div class="grid">${list.map(r => {
+    const on = DAYS.filter(([k]) => s.sel[k] === r.id).map(d => d[1]);
+    return `<button class="dish" data-recipe="${r.id}" data-week="${w.id}">${on.length ? `<span class="inplan">${on.join(" · ")}</span>` : ""}${art(r)}
+      <span class="txt"><b>${esc(r.name)}</b><span>${esc(r.time)} · ${chf(perPortion(w, r))}${r.protein ? ` · ${r.protein} g Prot.` : ""}</span></span></button>`;
+  }).join("")}</div>`;
+}
+function viewGerichte(w) {
+  return `
+    <div class="top"><div><span class="eyebrow">KW ${kw(w.id)} · ${statusLabel(w)}</span><h1>${w.recipes.length} Gerichte</h1></div>${syncChipHtml()}</div>
+    ${weeks.length > 1 ? weekbar(w) : ""}
+    <input class="search" id="search" type="search" placeholder="Suchen, z. B. Kichererbsen" value="${esc(ui.query)}" aria-label="Gerichte suchen">
+    <div class="chips" role="group" aria-label="Filter">${FILTERS.map(([v, l]) => `<button class="chip" data-filter="${v}" aria-pressed="${ui.filter === v}">${l}</button>`).join("")}</div>
+    <div id="dishGrid">${dishGrid(w)}</div>`;
 }
 
-function rezepteHtml(w, openDay) {
-  const days = selectedDays(w);
-  if (!days.length) return `<div class="card">Noch keine Gerichte gewählt. Wähle sie unter «Plan» aus.</div>`;
-  return days.map(d => {
-    const r = d.recipe;
-    return `<details class="recipe" id="rec-${d.key}"${openDay === d.key ? " open" : ""}>
-      <summary><span class="small muted">${d.long} · ${esc(r.time)}${r.protein ? ` · ca. ${r.protein} g Protein` : ""}</span><span class="row"><h3>${esc(r.name)}</h3></span></summary>
-      <div class="recipe-body">
-        ${r.note ? `<div class="note">${esc(r.note)}</div>` : ""}
-        ${sourceHtml(r)}
-        <div><strong>Zutaten für 4 Portionen</strong><ul>${r.ingredients.map(i => `<li>${esc(i)}</li>`).join("")}</ul></div>
-        <div><strong>Zubereitung</strong> <span class="small muted">(Schritt antippen, wenn erledigt)</span>
-          <ol class="steps">${r.steps.map((st, i) => `<li data-step="${w.id}|${d.key}|${i}" class="${doneSteps[w.id + d.key + i] ? "done" : ""}">${esc(st)}</li>`).join("")}</ol></div>
-        <button class="primary" data-cookday="${d.key}" data-week="${w.id}">Schritt für Schritt kochen</button>
-      </div></details>`;
-  }).join("");
-}
-
-function einkaufHtml(w) {
+/* ---------- Einkauf ---------- */
+function viewEinkauf(w) {
   const s = wstate(w), sm = summary(w), list = sm.list;
-  const open = list.rows.filter(r => !s.checked[r.key]).reduce((a, r) => a + r.cost, 0);
-  let html = `<div class="card">
-    <div class="row"><strong class="num">${sm.done} von ${sm.all} erledigt</strong><span class="num muted">noch ${chf(open)}</span></div>
-    <div class="progress" aria-hidden="true"><div style="width:${sm.all ? Math.round(sm.done / sm.all * 100) : 0}%"></div></div>
-    <div class="actions"><button class="ghost" data-copy="${w.id}">Liste kopieren</button><button class="ghost" data-resetchecks="${w.id}">Häkchen zurücksetzen</button></div>
-    <div class="small muted" id="copyMsg" aria-live="polite"></div></div>`;
-  for (const store of ["Migros", "Aldi"]) {
-    const rows = list.rows.filter(r => r.p.store === store).sort((a, b) => (!!b.p.statt - !!a.p.statt) || a.p.name.localeCompare(b.p.name, "de"));
-    if (!rows.length) continue;
-    html += `<div class="group"><h3>${store} <span class="num">${chf(rows.reduce((a, r) => a + r.cost, 0))}</span></h3>${rows.map(r => {
-      const c = !!s.checked[r.key];
-      return `<label class="item${c ? " checked" : ""}"><input type="checkbox" data-check="${r.key}" data-week="${w.id}"${c ? " checked" : ""}>
-        <div><div class="name">${r.packs > 1 ? r.packs + " × " : ""}${esc(r.p.name)}${r.p.statt ? `<span class="tag-deal">Aktion</span>` : ""}</div>
-        <div class="info">${esc(r.p.label)} · Bedarf ${needText(r)} · für ${r.days.join(", ")}</div></div>
-        <div class="price num">${r.p.approx ? "ca. " : ""}${r.cost.toFixed(2)}${r.statt ? `<s>${r.statt.toFixed(2)}</s>` : ""}</div></label>`;
-    }).join("")}</div>`;
-  }
-  const pantry = Object.keys(list.pantry).sort((a, b) => a.localeCompare(b, "de"));
-  if (pantry.length) {
-    html += `<div class="group"><h3>Grundvorrat <span>zu Hause prüfen</span></h3>${pantry.map(n => {
-      const key = "p:" + n, c = !!s.checked[key];
-      return `<label class="item${c ? " checked" : ""}"><input type="checkbox" data-check="${esc(key)}" data-week="${w.id}"${c ? " checked" : ""}><div><div class="name">${esc(n)}</div><div class="info">für ${[...list.pantry[n]].join(", ")}</div></div><div></div></label>`;
-    }).join("")}</div>`;
-  }
-  return html;
+  const groupHtml = (title, rows, extra) => {
+    const vis = store.hideDone ? rows.filter(r => !s.checked[r.key]) : rows;
+    if (!rows.length) return "";
+    return `<div class="group"><h3>${title} ${extra}</h3>${vis.length ? vis.map(r => r.p ? itemRow(r, s) : pantryRow(r, s)).join("") : `<div class="empty small">Alles erledigt.</div>`}</div>`;
+  };
+  const itemRow = (r, s) => `<label class="item${s.checked[r.key] ? " checked" : ""}"><input type="checkbox" data-check="${r.key}"${s.checked[r.key] ? " checked" : ""}>
+      <span><span class="name">${r.packs > 1 ? r.packs + " × " : ""}${esc(r.p.name)}${r.p.statt ? `<span class="deal">Aktion</span>` : ""}</span><br>
+      <span class="info">${esc(r.p.label)} · Bedarf ${needText(r)} · ${r.days.join(", ")}</span></span>
+      <span class="price num">${r.p.approx ? "ca. " : ""}${r.cost.toFixed(2)}${r.statt ? `<s>${r.statt.toFixed(2)}</s>` : ""}</span></label>`;
+  const pantryRow = (p, s) => `<label class="item${s.checked[p.key] ? " checked" : ""}"><input type="checkbox" data-check="${p.key}"${s.checked[p.key] ? " checked" : ""}>
+      <span><span class="name">${esc(p.name)}</span><br><span class="info">${p.days.join(", ")}</span></span><span></span></label>`;
+  const byStore = st => list.rows.filter(r => r.p.store === st).sort((a, b) => (!!b.p.statt - !!a.p.statt) || a.p.name.localeCompare(b.p.name, "de"));
+  const sumOf = rows => chf(rows.reduce((a, r) => a + r.cost, 0));
+  const mig = byStore("Migros"), aldi = byStore("Aldi");
+  return `
+    <div class="top"><div><span class="eyebrow">KW ${kw(w.id)} · ${statusLabel(w)}</span><h1>Einkauf</h1></div>${syncChipHtml()}</div>
+    ${weeks.length > 1 ? weekbar(w) : ""}
+    <div class="card shop-head">${ringSvg(sm.all ? sm.done / sm.all : 0, 72)}
+      <div><b class="num" style="font-family:var(--font-display);font-size:22px">${sm.done} von ${sm.all}</b><div class="muted small num">noch ${chf(sm.open)} von ${chf(sm.total)}</div></div></div>
+    <div class="spread"><label class="switch"><input type="checkbox" id="hideDone"${store.hideDone ? " checked" : ""}>Erledigte ausblenden</label>
+      <span class="row"><button class="chip" data-act="copy">Kopieren</button><button class="chip" data-act="reset">Zurücksetzen</button></span></div>
+    <div class="toast" id="copyMsg" aria-live="polite"></div>
+    ${groupHtml("Migros", mig, `<span class="num">${sumOf(mig)}</span>`)}
+    ${groupHtml("Aldi", aldi, `<span class="num">${sumOf(aldi)}</span>`)}
+    ${groupHtml("Grundvorrat", list.pantry, "<span>zu Hause prüfen</span>")}
+    <p class="footer">${esc(w.updated)}</p>`;
+}
+
+/* ---------- Blatt: Rezept und Auswahl ---------- */
+let sheetCtx = null;
+function openSheet(html, plain = false) {
+  const sh = $("sheet"), sc = $("scrim");
+  sh.innerHTML = html; sh.classList.toggle("plain", plain);
+  sh.hidden = false; sc.hidden = false; sh.scrollTop = 0;
+  requestAnimationFrame(() => { sh.classList.add("show"); sc.classList.add("show"); });
+  const c = sh.querySelector(".close"); if (c) c.focus();
+}
+function closeSheet() {
+  const sh = $("sheet"), sc = $("scrim");
+  sh.classList.remove("show"); sc.classList.remove("show"); sheetCtx = null;
+  setTimeout(() => { if (!sh.classList.contains("show")) { sh.hidden = true; sc.hidden = true; } }, 300);
+}
+function sourceLink(r) {
+  if (!r.source || !/^https:\/\//.test(r.source.url || "")) return "";
+  return `<a class="src" href="${esc(r.source.url)}" target="_blank" rel="noopener">Originalrezept auf ${esc(r.source.name || "der Webseite")} ↗</a>`;
+}
+function recipeSheet(w, r) {
+  const s = wstate(w);
+  sheetCtx = { type: "recipe", week: w.id, recipe: r.id };
+  const days = DAYS.filter(([k]) => s.sel[k] === r.id).map(d => d[0]);
+  return `<div class="grab"><span class="handle"></span><button class="close" data-act="close" aria-label="Schliessen">×</button></div>
+    ${art(r, "head")}
+    <div class="content">
+      <div class="badges">${r.tags.map(t => `<span class="badge">${t}</span>`).join("")}</div>
+      <h2 style="font-size:27px">${esc(r.name)}</h2>
+      <div class="factgrid">
+        <div><b>${r.minutes}′</b><span>Minuten</span></div>
+        <div><b>4</b><span>Portionen</span></div>
+        <div><b>${r.protein || "–"}${r.protein ? " g" : ""}</b><span>Protein</span></div>
+        <div><b class="num">${perPortion(w, r, s.sel).toFixed(2)}</b><span>CHF/Portion</span></div>
+      </div>
+      ${sourceLink(r)}
+      ${r.note ? `<div class="note">${esc(r.note)}</div>` : ""}
+      <div class="section"><h3>An welchem Tag?</h3>
+        <div class="daypick">${DAYS.map(([k, sh]) => `<button data-assign="${k}" aria-pressed="${days.includes(k)}" aria-label="${sh}">${sh}</button>`).join("")}</div></div>
+      <div class="section"><h3>Zutaten</h3><ul class="ing">${r.ingredients.map((x, i) => `<li data-ing="${i}" class="${ui.ingDone[r.id + i] ? "done" : ""}">${esc(x)}</li>`).join("")}</ul></div>
+      <div class="section"><h3>Zubereitung</h3><ol class="steps">${r.steps.map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>
+    </div>
+    <div class="sticky-cta"><button class="btn primary block" data-cookrecipe="${r.id}">Schritt für Schritt kochen</button></div>`;
+}
+function pickSheet(w, dayKey) {
+  const s = wstate(w), cur = s.sel[dayKey], dayName = DAYS.find(d => d[0] === dayKey)[2];
+  sheetCtx = { type: "pick", week: w.id, day: dayKey };
+  const sorted = w.recipes.slice().sort((a, b) => (b.id === cur) - (a.id === cur));
+  return `<div class="grab"><span class="handle"></span><button class="close" data-act="close" aria-label="Schliessen">×</button></div>
+    <div class="content" style="padding-top:0">
+      <div><span class="eyebrow">${dayName}, ${dm(dateOf(w, dayKey))}</span><h2>Was kocht ihr?</h2></div>
+      <div class="pick-list">
+        <button class="pick${cur === "" ? " current" : ""}" data-choose="">${art(null)}<span><b>Kochfrei</b><span>Auswärts, Reste oder spontan</span></span><span class="tick">${cur === "" ? "✓" : ""}</span></button>
+        ${sorted.map(r => `<button class="pick${r.id === cur ? " current" : ""}" data-choose="${r.id}">${art(r)}<span><b>${esc(r.name)}</b><span>${esc(r.time)} · ${chf(perPortion(w, r))}${r.protein ? ` · ${r.protein} g Prot.` : ""}</span></span><span class="tick">${r.id === cur ? "✓" : ""}</span></button>`).join("")}
+      </div></div>`;
+}
+function syncSheet() {
+  sheetCtx = { type: "sync" };
+  const on = syncConfigured();
+  return `<div class="grab"><span class="handle"></span><button class="close" data-act="close" aria-label="Schliessen">×</button></div>
+    <div class="content" style="padding-top:0"><h2>${on ? "Gemeinsam speichern" : "Nur auf diesem Handy"}</h2>
+    <p>${on ? "Auswahl, Lust und Häkchen werden sofort mit allen Handys geteilt, auf denen diese App läuft. Ohne Internet speichert die App auf dem Handy und gleicht später ab."
+      : "Im Moment speichert jedes Handy seine Auswahl und Häkchen für sich. Sobald das gemeinsame Speichern eingerichtet ist, seht ihr beide dasselbe."}</p></div>`;
 }
 
 /* ---------- Kochmodus ---------- */
-let cook = null;
-function openCook(w, day) {
-  const r = w.byId[wstate(w).sel[day]];
-  if (!r) return;
+let cook = null, wakeLock = null, timer = null;
+function openCookRecipe(w, r) {
+  closeSheet();
   cook = { r, i: 0 };
   $("cookTitle").textContent = r.name;
+  $("cookIng").innerHTML = r.ingredients.map(x => `<li>${esc(x)}</li>`).join("");
   $("cook").hidden = false;
   drawCook();
-  $("cookNext").focus();
+  try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(l => { wakeLock = l; }).catch(() => {}); } catch (e) { /* ignorieren */ }
 }
+function stepMinutes(t) { const m = /(\d+)(?:\s*(?:bis|–|-)\s*(\d+))?\s*Min/.exec(t); return m ? Number(m[2] || m[1]) : 0; }
 function drawCook() {
   const { r, i } = cook;
-  $("cookCount").textContent = `Schritt ${i + 1} von ${r.steps.length}`;
-  $("cookDots").innerHTML = r.steps.map((_, j) => `<i class="${j <= i ? "on" : ""}"></i>`).join("");
+  $("cookSegs").innerHTML = r.steps.map((_, j) => `<i class="${j <= i ? "on" : ""}"></i>`).join("");
+  $("cookNum").textContent = String(i + 1).padStart(2, "0") + " / " + String(r.steps.length).padStart(2, "0");
   $("cookStep").textContent = r.steps[i];
   $("cookPrev").disabled = i === 0;
-  $("cookNext").textContent = i === r.steps.length - 1 ? "Fertig" : "Weiter";
+  $("cookNext").textContent = i === r.steps.length - 1 ? "Fertig, en Guete!" : "Weiter";
+  const min = stepMinutes(r.steps[i]);
+  const tb = $("cookTimer");
+  if (timer && timer.step === i) { tb.hidden = false; }
+  else if (min > 0 && !timer) { tb.hidden = false; tb.classList.remove("run"); $("cookTimerTxt").textContent = `Timer ${min} Min. starten`; tb.dataset.min = min; }
+  else if (!timer) { tb.hidden = true; }
 }
-function closeCook() { $("cook").hidden = true; cook = null; }
+function beep() {
+  try {
+    const ctx = timer && timer.ctx; if (!ctx) return;
+    [0, 0.35, 0.7].forEach(t => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 880; o.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(0.25, ctx.currentTime + t); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.3); o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.3); });
+  } catch (e) { /* ignorieren */ }
+}
+function toggleTimer() {
+  const tb = $("cookTimer");
+  if (timer) { clearInterval(timer.id); timer = null; tb.classList.remove("run"); drawCook(); return; }
+  const min = Number(tb.dataset.min || 0); if (!min) return;
+  let ctx = null; try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* ohne Ton */ }
+  const end = Date.now() + min * 60000;
+  timer = { step: cook.i, ctx, id: setInterval(() => {
+    const left = Math.max(0, end - Date.now()), m = Math.floor(left / 60000), s = Math.floor(left / 1000) % 60;
+    $("cookTimerTxt").textContent = left ? `${m}:${String(s).padStart(2, "0")} · antippen zum Stoppen` : "Zeit ist um!";
+    if (!left) { clearInterval(timer.id); beep(); setTimeout(() => { timer = null; tb.classList.remove("run"); if (cook) drawCook(); }, 4000); }
+  }, 250) };
+  tb.classList.add("run");
+}
+function closeCook() {
+  $("cook").hidden = true; cook = null;
+  if (timer) { clearInterval(timer.id); timer = null; }
+  if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+}
 $("cookPrev").onclick = () => { if (cook.i > 0) { cook.i--; drawCook(); } };
 $("cookNext").onclick = () => { if (cook.i < cook.r.steps.length - 1) { cook.i++; drawCook(); } else closeCook(); };
 $("cookClose").onclick = closeCook;
-document.addEventListener("keydown", e => {
-  if (!cook) return;
-  if (e.key === "Escape") closeCook();
-  if (e.key === "ArrowRight") $("cookNext").click();
-  if (e.key === "ArrowLeft") $("cookPrev").click();
-});
+$("cookTimer").onclick = toggleTimer;
+
+/* ---------- Navigation ---------- */
+function activeWeek() { return weekById[ui.week] || currentWeek(); }
+function go(tab, weekId) {
+  ui.tab = tab; if (weekId) ui.week = weekId;
+  const h = tab === "heute" ? "heute" : tab + "-" + activeWeek().id;
+  if (location.hash !== "#" + h) history.replaceState(null, "", "#" + h);
+  render();
+}
+function readHash() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  const m = /^(woche|gerichte|einkauf)(?:-(.+))?$/.exec(h);
+  if (m) { ui.tab = m[1]; if (m[2] && weekById[m[2]]) ui.week = m[2]; } else ui.tab = "heute";
+}
+window.addEventListener("hashchange", () => { readHash(); render(); });
+
+function render(keepScroll = false) {
+  const v = $("view");
+  if (!weeks.length) { v.innerHTML = `<div class="empty">Noch keine Wochendaten vorhanden.</div>`; return; }
+  const y = window.scrollY;
+  const w = activeWeek();
+  v.innerHTML = ui.tab === "woche" ? viewWoche(w) : ui.tab === "gerichte" ? viewGerichte(w) : ui.tab === "einkauf" ? viewEinkauf(w) : viewHeute();
+  document.querySelectorAll(".tabbar button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === ui.tab ? "page" : "false"));
+  const sm = summary(ui.tab === "heute" ? currentWeek() : w), left = sm.all - sm.done, cnt = $("shopCount");
+  cnt.hidden = !left; cnt.textContent = left;
+  if (keepScroll) window.scrollTo(0, y); else window.scrollTo(0, 0);
+  const wk = v.querySelector('.wk[aria-pressed="true"]'); if (wk && wk.scrollIntoView) wk.scrollIntoView({ inline: "center", block: "nearest" });
+  if (keepScroll) window.scrollTo(0, y);
+  if (sheetCtx && sheetCtx.type === "recipe") { const sw = weekById[sheetCtx.week]; $("sheet").querySelectorAll("[data-assign]").forEach(b => b.setAttribute("aria-pressed", String(wstate(sw).sel[b.dataset.assign] === sheetCtx.recipe))); }
+}
 
 /* ---------- Ereignisse ---------- */
-$("app").addEventListener("click", async e => {
-  const t = e.target.closest("button, li[data-step]");
-  if (!t) return;
-  const w = weekById[t.dataset.week];
-  if ("home" in t.dataset) return go({ view: "home" });
-  if (t.dataset.goweek) return go({ view: "week", id: t.dataset.goweek, tab: t.dataset.tab || "plan" }, { openDay: t.dataset.day });
-  if (t.dataset.tabgo) return go({ view: "week", id: t.dataset.week, tab: t.dataset.tabgo });
-  if (t.dataset.mood) {
-    const s = wstate(w), m = t.dataset.mood;
+document.querySelector(".tabbar").addEventListener("click", e => {
+  const b = e.target.closest("button[data-tab]"); if (!b) return;
+  go(b.dataset.tab);
+});
+$("scrim").addEventListener("click", closeSheet);
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { if (cook) closeCook(); else if (sheetCtx) closeSheet(); }
+  if (cook && e.key === "ArrowRight") $("cookNext").click();
+  if (cook && e.key === "ArrowLeft") $("cookPrev").click();
+});
+
+$("view").addEventListener("click", async e => {
+  const t = e.target.closest("button, a"); if (!t || t.tagName === "A") return;
+  const d = t.dataset;
+  if (d.go) return go(d.go, d.week);
+  if (t.classList.contains("wk")) { ui.week = d.week; return go(ui.tab, d.week); }
+  const w = weekById[d.week] || activeWeek();
+  if (d.recipe) return openSheet(recipeSheet(w, w.byId[d.recipe]));
+  if (d.swap) return openSheet(pickSheet(w, d.swap), true);
+  if (d.cook) return openCookRecipe(w, w.byId[wstate(w).sel[d.cook]]);
+  if (d.filter) { ui.filter = d.filter; return render(true); }
+  if (d.mood) {
+    const s = wstate(w), m = d.mood;
     if (s.moods.includes(m)) s.moods = s.moods.filter(x => x !== m);
-    else {
-      s.moods.push(m);
-      if (m === "schnell") s.moods = s.moods.filter(x => x !== "aufwendig");
-      if (m === "aufwendig") s.moods = s.moods.filter(x => x !== "schnell");
-    }
-    save();
-    return render({ keepScroll: true });
+    else { s.moods.push(m); if (m === "schnell") s.moods = s.moods.filter(x => x !== "aufwendig"); if (m === "aufwendig") s.moods = s.moods.filter(x => x !== "schnell"); }
+    patch(w.id, { moods: Object.fromEntries(s.moods.map(x => [x, true])) });
+    return render(true);
   }
-  if (t.dataset.plan) {
-    const s = wstate(weekById[t.dataset.plan]);
-    s.sel = planByMood(weekById[t.dataset.plan], s.moods);
-    s.checked = {};
-    save();
-    if (route.view === "home") return go({ view: "week", id: t.dataset.plan, tab: "plan" });
-    render({ keepScroll: true });
-    const toast = $("toast"); if (toast) toast.textContent = "Neuer Plan erstellt. Einzelne Tage kannst du unten noch tauschen.";
+  if (d.act === "plan") {
+    const s = wstate(w); s.sel = planByMood(w, s.moods); s.checked = {};
+    patch(w.id, { sel: s.sel, checked: null });
+    render(true); const tt = $("toast"); if (tt) tt.textContent = "Neu zusammengestellt. Einzelne Tage könnt ihr unten tauschen.";
     return;
   }
-  if (t.dataset.gfilter) { gFilter = t.dataset.gfilter; return render({ keepScroll: true }); }
-  if (t.dataset.cookday) return openCook(w, t.dataset.cookday);
-  if (t.dataset.step) {
-    const [wid, day, i] = t.dataset.step.split("|"), k = wid + day + i;
-    doneSteps[k] = !doneSteps[k]; t.classList.toggle("done", doneSteps[k]); return;
-  }
-  if (t.dataset.resetchecks) { wstate(weekById[t.dataset.resetchecks]).checked = {}; save(); return render({ keepScroll: true }); }
-  if (t.dataset.copy) {
-    const cw = weekById[t.dataset.copy], s = wstate(cw), list = shoppingList(cw), lines = [];
+  if (d.act === "syncinfo") return openSheet(syncSheet(), true);
+  if (d.act === "reset") { wstate(w).checked = {}; patch(w.id, { checked: null }); return render(true); }
+  if (d.act === "copy") {
+    const s = wstate(w), list = shoppingList(w), lines = [];
     for (const st of ["Migros", "Aldi"]) {
-      const rows = list.rows.filter(r => r.p.store === st && !s.checked[r.key]);
-      if (!rows.length) continue;
-      lines.push(st.toUpperCase());
-      for (const r of rows) lines.push(`- ${r.packs > 1 ? r.packs + " × " : ""}${r.p.name} (${r.p.label})`);
-      lines.push("");
+      const rows = list.rows.filter(r => r.p.store === st && !s.checked[r.key]); if (!rows.length) continue;
+      lines.push(st.toUpperCase()); rows.forEach(r => lines.push(`- ${r.packs > 1 ? r.packs + " × " : ""}${r.p.name} (${r.p.label})`)); lines.push("");
     }
-    try { await navigator.clipboard.writeText(lines.join("\n").trim()); $("copyMsg").textContent = "Liste kopiert, du kannst sie z. B. in WhatsApp einfügen."; }
+    try { await navigator.clipboard.writeText(lines.join("\n").trim()); $("copyMsg").textContent = "Kopiert. Du kannst die Liste z. B. in WhatsApp einfügen."; }
     catch (err) { $("copyMsg").textContent = "Kopieren ist hier nicht möglich."; }
   }
 });
-$("app").addEventListener("change", e => {
-  const t = e.target, w = weekById[t.dataset.week];
-  if (!w) return;
-  const s = wstate(w);
-  if (t.matches("select[data-day]")) {
-    s.sel[t.dataset.day] = t.value; save(); render({ keepScroll: true });
-    const again = $("sel-" + t.dataset.day); if (again) again.focus();
-  }
-  if (t.matches("select[data-pick]") && t.value) {
-    s.sel[t.value] = t.dataset.pick; save(); render({ keepScroll: true });
-    const toast = $("pick-" + t.dataset.pick); if (toast) toast.focus();
-    return;
-  }
+$("view").addEventListener("change", e => {
+  const t = e.target, w = activeWeek();
+  if (t.id === "hideDone") { store.hideDone = t.checked; saveLocal(); return render(true); }
   if (t.matches("input[data-check]")) {
-    if (t.checked) s.checked[t.dataset.check] = true; else delete s.checked[t.dataset.check];
-    save(); render({ keepScroll: true });
+    const s = wstate(w), k = t.dataset.check;
+    if (t.checked) s.checked[k] = true; else delete s.checked[k];
+    patch(w.id, { ["checked/" + k]: t.checked ? true : null });
+    if (navigator.vibrate) navigator.vibrate(10);
+    render(true);
+  }
+});
+$("view").addEventListener("input", e => {
+  if (e.target.id !== "search") return;
+  ui.query = e.target.value; const g = $("dishGrid"); if (g) g.innerHTML = dishGrid(activeWeek());
+});
+
+$("sheet").addEventListener("click", e => {
+  const t = e.target.closest("button, li[data-ing]"); if (!t) return;
+  const d = t.dataset;
+  if (d.act === "close") return closeSheet();
+  if (!sheetCtx) return;
+  const w = weekById[sheetCtx.week];
+  if (d.ing !== undefined && sheetCtx.type === "recipe") { const k = sheetCtx.recipe + d.ing; ui.ingDone[k] = !ui.ingDone[k]; t.classList.toggle("done", ui.ingDone[k]); return; }
+  if (d.assign) {
+    const s = wstate(w), k = d.assign, val = s.sel[k] === sheetCtx.recipe ? "" : sheetCtx.recipe;
+    s.sel[k] = val; patch(w.id, { ["sel/" + k]: val });
+    return render(true);
+  }
+  if (d.cookrecipe) return openCookRecipe(w, w.byId[d.cookrecipe]);
+  if (d.choose !== undefined && sheetCtx.type === "pick") {
+    const s = wstate(w); s.sel[sheetCtx.day] = d.choose; patch(w.id, { ["sel/" + sheetCtx.day]: d.choose });
+    closeSheet(); return render(true);
   }
 });
 
 /* ---------- Start ---------- */
-load();
-route = parseHash();
+loadLocal();
+readHash();
 render();
-if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(() => {}); }
+connectSync();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
