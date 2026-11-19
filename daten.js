@@ -1,212 +1,420 @@
 /* Wochendaten für «Unser Essplan».
-   Jede Woche diese Datei durch die neue Version ersetzen. Sonst nichts ändern. */
-const WEEK = {
-  id: "2026-KW47",
-  label: "Woche ab Mo 16.11. · Migros-Aktionen bis Mi 18.11., Aldi solange Vorrat",
-  updated: "Preise Stand 14.11.2026, Kanton Zürich. Aktionspreise von aktionis.ch, eini.app, rappn.ch und aldi-suisse.ch; Preise ohne Aktion sind geschätzt."
-};
-
-
-/* unit: g | stk | dose | beutel | bund ; pack = Menge pro Packung in dieser Einheit */
-const PRODUCTS = {
-  poulet:        { name: "Optigal Poulet ganz", label: "1 Stück, ca. 1,2 kg", store: "Migros", unit: "stk", pack: 1, price: 8.35, statt: 11.95 },
-  suesskartoffeln:{ name: "Süsskartoffeln", label: "1 kg", store: "Migros", unit: "g", pack: 1000, price: 1.25, statt: 1.80 },
-  weisskabis:    { name: "Weisskabis", label: "1 Kopf, ca. 1,5 kg", store: "Migros", unit: "g", pack: 1500, price: 2.40, statt: 3.00 },
-  aubergine:     { name: "Bio-Auberginen", label: "1 Stück, ca. 300 g", store: "Migros", unit: "stk", pack: 1, price: 1.15, statt: 1.50 },
-  lauch:         { name: "Bio-Lauch", label: "500 g", store: "Migros", unit: "g", pack: 500, price: 3.50, statt: 5.00 },
-  datteltomaten: { name: "Snack Datteltomaten", label: "250 g", store: "Migros", unit: "g", pack: 250, price: 1.75, statt: 2.95 },
-  tomaten:       { name: "Longobardi Tomaten gehackt", label: "6 × 230 g", store: "Migros", unit: "dose", pack: 6, price: 5.45, statt: 7.80 },
-  zitronen:      { name: "Bio-Zitronen", label: "750 g, ca. 6 Stück", store: "Migros", unit: "stk", pack: 6, price: 1.95, statt: 2.80 },
-  gruyere:       { name: "Gruyère Reibkäse", label: "3 × 130 g", store: "Migros", unit: "beutel", pack: 3, price: 6.95, statt: 8.85 },
-  reisnudeln:    { name: "Thai Kitchen Reisnudeln", label: "250 g", store: "Migros", unit: "g", pack: 250, price: 2.20, statt: 2.75 },
-  gnocchi:       { name: "Anna's Best Gnocchi Caprese", label: "2 × 400 g", store: "Migros", unit: "g", pack: 800, price: 7.90, statt: 9.90 },
-  tofu:          { name: "Tofu nature", label: "400 g", store: "Migros", unit: "g", pack: 400, price: 3.80, approx: true },
-  bohnen:        { name: "Weisse Bohnen", label: "Dose, 400 g", store: "Migros", unit: "dose", pack: 1, price: 1.25, approx: true },
-  kichererbsen:  { name: "Kichererbsen", label: "Dose, 400 g", store: "Migros", unit: "dose", pack: 1, price: 1.25, approx: true },
-  linsen:        { name: "Rote Linsen", label: "500 g", store: "Migros", unit: "g", pack: 500, price: 2.50, approx: true },
-  risottoreis:   { name: "Risottoreis", label: "1 kg", store: "Migros", unit: "g", pack: 1000, price: 2.90, approx: true },
-  mozzarella:    { name: "Mozzarella", label: "150 g", store: "Migros", unit: "stk", pack: 1, price: 1.20, approx: true },
-  eier:          { name: "Eier", label: "6 Stück", store: "Migros", unit: "stk", pack: 6, price: 3.50, approx: true },
-  zwiebeln:      { name: "Zwiebeln", label: "1 kg, ca. 8 Stück", store: "Migros", unit: "stk", pack: 8, price: 2.00, approx: true },
-  karotten:      { name: "Karotten", label: "1 kg, ca. 8 Stück", store: "Migros", unit: "stk", pack: 8, price: 2.00, approx: true },
-  fruehlingszw:  { name: "Frühlingszwiebeln", label: "1 Bund", store: "Migros", unit: "bund", pack: 1, price: 1.80, approx: true },
-  knoblauch:     { name: "Knoblauch", label: "1 Knolle, ca. 10 Zehen", store: "Migros", unit: "stk", pack: 10, price: 1.50, approx: true },
-  ingwer:        { name: "Ingwer", label: "1 Stück, ca. 100 g", store: "Migros", unit: "g", pack: 100, price: 1.00, approx: true },
-  lachs:         { name: "Lachsfiletportionen, tiefgekühlt", label: "500 g", store: "Aldi", unit: "g", pack: 500, price: 9.69 },
-  penne:         { name: "Rummo Penne Rigate", label: "2 kg", store: "Aldi", unit: "g", pack: 2000, price: 4.99, statt: 5.99 },
-  peterli:       { name: "Küchenkräuter (Peterli)", label: "1 Topf", store: "Aldi", unit: "stk", pack: 1, price: 2.99 }
-};
-
-const RECIPES = [
+   Jede Woche wird oben eine neue Woche eingefügt. Höchstens 4 Wochen behalten, die älteste unten löschen. */
+const WOCHEN = [
   {
-    id: "minestrone", name: "Minestrone mit weissen Bohnen und Penne", tags: ["italienisch", "vegetarisch"], time: "35 Min.", minutes: 35,
-    items: [["weisskabis", 400], ["karotten", 2], ["lauch", 200], ["zwiebeln", 1], ["knoblauch", 2], ["tomaten", 2], ["bohnen", 2], ["penne", 200], ["gruyere", 1], ["peterli", 0.5]],
-    pantry: ["Gemüsebouillon", "Olivenöl", "Pfeffer"],
-    ingredients: ["400 g Weisskabis", "2 Karotten", "200 g Lauch", "1 Zwiebel", "2 Knoblauchzehen", "2 Dosen gehackte Tomaten (460 g)", "2 Dosen weisse Bohnen", "200 g Penne", "1,5 l Gemüsebouillon", "2 EL Olivenöl", "130 g Gruyère Reibkäse", "Peterli, Pfeffer"],
-    steps: [
-      "Zwiebel und Knoblauch hacken. Karotten in kleine Würfel, Lauch in Ringe und Kabis in Streifen schneiden.",
-      "Öl in einem grossen Topf erhitzen. Zwiebel, Knoblauch, Karotten und Lauch 5 Minuten andünsten.",
-      "Kabis, Tomaten und Bouillon dazugeben, aufkochen und zugedeckt 10 Minuten köcheln.",
-      "Bohnen in einem Sieb abspülen. Zusammen mit den Penne in die Suppe geben.",
-      "Weitere 10 bis 12 Minuten köcheln, bis die Penne gar sind. Ab und zu umrühren, damit nichts ansetzt.",
-      "Mit Pfeffer abschmecken. Mit Gruyère und gehacktem Peterli servieren.",
-      "Für die Lunchboxen: Die Suppe dickt über Nacht ein. Beim Aufwärmen einen Schluck Wasser dazugeben."
-    ]
-  },
-  {
-    id: "lachs", name: "Lachs und Süsskartoffeln vom Blech", tags: ["fisch"], time: "35 Min.", minutes: 35,
-    items: [["lachs", 500], ["suesskartoffeln", 1000], ["datteltomaten", 250], ["zitronen", 1], ["peterli", 0.5]],
-    pantry: ["Öl", "Paprikapulver", "Salz", "Pfeffer"],
-    ingredients: ["500 g Lachsfilet (am Morgen zum Auftauen in den Kühlschrank legen)", "1 kg Süsskartoffeln", "250 g Datteltomaten", "1 Zitrone", "2 EL Öl", "1 TL Paprikapulver", "Peterli, Salz, Pfeffer"],
-    steps: [
-      "Ofen auf 200 Grad Umluft vorheizen.",
-      "Süsskartoffeln waschen und mit Schale in Schnitze schneiden. Auf dem Blech mit Öl, Paprika und 1 TL Salz mischen.",
-      "Blech 15 Minuten in den Ofen schieben.",
-      "Lachs trockentupfen, salzen und pfeffern. Die halbe Zitrone in Scheiben schneiden.",
-      "Blech herausnehmen, Süsskartoffeln wenden, Lachs dazulegen und mit Zitronenscheiben belegen.",
-      "Weitere 12 bis 15 Minuten backen, bis der Lachs sich mit der Gabel leicht teilen lässt.",
-      "Datteltomaten halbieren und leicht salzen. Alles mit dem Saft der anderen Zitronenhälfte und gehacktem Peterli servieren."
-    ]
-  },
-  {
-    id: "suppe", name: "Süsskartoffel-Lauch-Suppe mit knusprigen Kichererbsen", tags: ["vegetarisch"], time: "30 Min.", minutes: 30,
-    items: [["suesskartoffeln", 600], ["lauch", 400], ["bohnen", 1], ["kichererbsen", 1], ["zwiebeln", 1], ["knoblauch", 1], ["zitronen", 0.5]],
-    pantry: ["Gemüsebouillon", "Öl", "Paprikapulver", "Salz", "Pfeffer"],
-    ingredients: ["600 g Süsskartoffeln", "400 g Lauch", "1 Dose weisse Bohnen", "1 Dose Kichererbsen", "1 Zwiebel", "1 Knoblauchzehe", "1 l Gemüsebouillon", "2 EL Öl", "1 TL Paprikapulver", "½ Zitrone", "Salz, Pfeffer"],
-    steps: [
-      "Lauch längs halbieren, gründlich waschen und in Ringe schneiden. Zwiebel und Knoblauch hacken, Süsskartoffeln schälen und würfeln.",
-      "1 EL Öl in einem grossen Topf erhitzen, Zwiebel, Knoblauch und Lauch 3 Minuten andünsten.",
-      "Süsskartoffeln, abgespülte Bohnen und Bouillon dazugeben, aufkochen und zugedeckt 15 Minuten köcheln.",
-      "In der Zwischenzeit die Kichererbsen abspülen und mit Küchenpapier gut trockentupfen. In einer Pfanne mit 1 EL Öl 8 bis 10 Minuten knusprig braten, mit Paprika und etwas Salz würzen.",
-      "Suppe mit dem Stabmixer pürieren. Ohne Mixer: mit dem Kartoffelstampfer grob zerdrücken.",
-      "Mit Zitronensaft und Pfeffer abschmecken, Kichererbsen darüberstreuen.",
-      "Für die Lunchboxen: Kichererbsen separat einpacken, damit sie knusprig bleiben."
-    ]
-  },
-  {
-    id: "reisnudeln", name: "Reisnudel-Pfanne mit Tofu, Weisskabis und Ei", tags: ["vegetarisch", "schnell"], time: "25 Min.", minutes: 25,
-    items: [["reisnudeln", 300], ["tofu", 400], ["weisskabis", 500], ["karotten", 2], ["fruehlingszw", 0.6], ["eier", 4], ["knoblauch", 2], ["ingwer", 30], ["zitronen", 0.5]],
-    pantry: ["Sojasauce", "Öl"],
-    ingredients: ["300 g Reisnudeln", "400 g Tofu nature", "500 g Weisskabis", "2 Karotten", "3 Frühlingszwiebeln", "4 Eier", "2 Knoblauchzehen", "1 daumengrosses Stück Ingwer", "5 EL Sojasauce", "3 EL Öl", "½ Zitrone"],
-    steps: [
-      "Reisnudeln nach Packungsangabe in heissem Wasser einweichen, abgiessen.",
-      "Tofu mit Küchenpapier trockendrücken und in 2-cm-Würfel schneiden. Weisskabis in feine Streifen, Karotten in dünne Stifte, Frühlingszwiebeln in Ringe schneiden. Knoblauch und Ingwer fein hacken.",
-      "2 EL Öl in einer grossen Pfanne stark erhitzen. Tofu 5 bis 6 Minuten rundum goldbraun braten, mit 1 EL Sojasauce ablöschen und auf einen Teller geben.",
-      "Restliches Öl in die Pfanne geben. Kabis und Karotten 5 Minuten unter Rühren braten, dann Knoblauch und Ingwer 1 Minute mitbraten.",
-      "Gemüse an den Rand schieben, Eier in die Mitte schlagen und zu Rührei verrühren.",
-      "Nudeln, Tofu und restliche Sojasauce dazugeben, alles 2 Minuten mischen.",
-      "Mit Zitronensaft abschmecken und Frühlingszwiebeln darüberstreuen."
-    ]
-  },
-  {
-    id: "penne-aubergine", name: "Penne mit Auberginen-Tomaten-Sauce", tags: ["italienisch", "vegetarisch"], time: "30 Min.", minutes: 30,
-    items: [["penne", 500], ["aubergine", 2], ["tomaten", 3], ["zwiebeln", 1], ["knoblauch", 2], ["gruyere", 1]],
-    pantry: ["Olivenöl", "Salz", "Pfeffer"],
-    ingredients: ["500 g Penne", "2 Auberginen", "3 Dosen gehackte Tomaten (690 g)", "1 Zwiebel", "2 Knoblauchzehen", "3 EL Olivenöl", "130 g Gruyère Reibkäse", "Salz, Pfeffer"],
-    steps: [
-      "Auberginen in 2-cm-Würfel schneiden, Zwiebel und Knoblauch hacken.",
-      "Öl in einer grossen Pfanne erhitzen, Auberginen mit ½ TL Salz 8 Minuten braten, bis sie weich und leicht braun sind.",
-      "Zwiebel und Knoblauch 2 Minuten mitbraten.",
-      "Tomaten dazugeben und 15 Minuten offen köcheln lassen.",
-      "Gleichzeitig Penne in reichlich Salzwasser nach Packungsangabe kochen. Vor dem Abgiessen eine Tasse Kochwasser aufheben.",
-      "Penne mit der Sauce mischen, bei Bedarf etwas Kochwasser dazugeben. Mit Pfeffer abschmecken.",
-      "Mit Gruyère bestreuen."
-    ]
-  },
-  {
-    id: "poulet-ofen", name: "Zwei Poulets aus dem Ofen mit Gemüse", tags: ["poulet"], time: "15 Min. + 75 Min. Ofen", minutes: 90,
-    items: [["poulet", 2], ["suesskartoffeln", 1000], ["lauch", 400], ["zwiebeln", 2], ["zitronen", 1], ["knoblauch", 3]],
-    pantry: ["Öl", "Paprikapulver", "Salz", "Pfeffer"],
-    ingredients: ["2 Poulets (aufgetaut)", "1 kg Süsskartoffeln", "400 g Lauch", "2 Zwiebeln", "1 Zitrone", "3 Knoblauchzehen", "3 EL Öl", "2 TL Paprikapulver", "Salz, Pfeffer"],
-    steps: [
-      "Ofen auf 200 Grad Ober- und Unterhitze vorheizen.",
-      "Poulets trockentupfen. Jedes mit 1 EL Öl, 1 TL Paprika, 1 TL Salz und Pfeffer einreiben. Je eine Zitronenhälfte in den Bauch stecken.",
-      "Süsskartoffeln in grobe Stücke, Lauch in 3-cm-Stücke, Zwiebeln in Viertel schneiden. Mit dem ganzen Knoblauch und 1 EL Öl auf einem tiefen Blech verteilen, salzen.",
-      "Poulets mit der Brust nach oben auf das Gemüse setzen.",
-      "70 bis 80 Minuten braten. Das Poulet ist gar, wenn beim Einstechen am Schenkel klarer Saft austritt.",
-      "10 Minuten ruhen lassen, dann ein Poulet zerteilen und mit dem Gemüse servieren.",
-      "Vom zweiten Poulet das Fleisch ablösen und im Kühlschrank aufbewahren. Die Knochen von beiden Poulets für Sonntag aufheben."
+    id: "2026-KW47",
+    start: "2026-11-16",
+    label: "Woche ab Mo 16.11. · Migros-Aktionen bis Mi 18.11., Aldi solange Vorrat",
+    updated: "Preise Stand 14.11.2026, Kanton Zürich. Aktionspreise von aktionis.ch, eini.app, rappn.ch und aldi-suisse.ch; Preise ohne Aktion sind geschätzt.",
+    products: {
+      poulet: {"name":"Optigal Poulet ganz","label":"1 Stück, ca. 1,2 kg","store":"Migros","unit":"stk","pack":1,"price":8.35,"statt":11.95},
+      suesskartoffeln: {"name":"Süsskartoffeln","label":"1 kg","store":"Migros","unit":"g","pack":1000,"price":1.25,"statt":1.8},
+      weisskabis: {"name":"Weisskabis","label":"1 Kopf, ca. 1,5 kg","store":"Migros","unit":"g","pack":1500,"price":2.4,"statt":3},
+      aubergine: {"name":"Bio-Auberginen","label":"1 Stück, ca. 300 g","store":"Migros","unit":"stk","pack":1,"price":1.15,"statt":1.5},
+      lauch: {"name":"Bio-Lauch","label":"500 g","store":"Migros","unit":"g","pack":500,"price":3.5,"statt":5},
+      datteltomaten: {"name":"Snack Datteltomaten","label":"250 g","store":"Migros","unit":"g","pack":250,"price":1.75,"statt":2.95},
+      tomaten: {"name":"Longobardi Tomaten gehackt","label":"6 × 230 g","store":"Migros","unit":"dose","pack":6,"price":5.45,"statt":7.8},
+      zitronen: {"name":"Bio-Zitronen","label":"750 g, ca. 6 Stück","store":"Migros","unit":"stk","pack":6,"price":1.95,"statt":2.8},
+      gruyere: {"name":"Gruyère Reibkäse","label":"3 × 130 g","store":"Migros","unit":"beutel","pack":3,"price":6.95,"statt":8.85},
+      reisnudeln: {"name":"Thai Kitchen Reisnudeln","label":"250 g","store":"Migros","unit":"g","pack":250,"price":2.2,"statt":2.75},
+      gnocchi: {"name":"Anna's Best Gnocchi Caprese","label":"2 × 400 g","store":"Migros","unit":"g","pack":800,"price":7.9,"statt":9.9},
+      tofu: {"name":"Tofu nature","label":"400 g","store":"Migros","unit":"g","pack":400,"price":3.8,"approx":true},
+      bohnen: {"name":"Weisse Bohnen","label":"Dose, 400 g","store":"Migros","unit":"dose","pack":1,"price":1.25,"approx":true},
+      kichererbsen: {"name":"Kichererbsen","label":"Dose, 400 g","store":"Migros","unit":"dose","pack":1,"price":1.25,"approx":true},
+      linsen: {"name":"Rote Linsen","label":"500 g","store":"Migros","unit":"g","pack":500,"price":2.5,"approx":true},
+      risottoreis: {"name":"Risottoreis","label":"1 kg","store":"Migros","unit":"g","pack":1000,"price":2.9,"approx":true},
+      mozzarella: {"name":"Mozzarella","label":"150 g","store":"Migros","unit":"stk","pack":1,"price":1.2,"approx":true},
+      eier: {"name":"Eier","label":"6 Stück","store":"Migros","unit":"stk","pack":6,"price":3.5,"approx":true},
+      zwiebeln: {"name":"Zwiebeln","label":"1 kg, ca. 8 Stück","store":"Migros","unit":"stk","pack":8,"price":2,"approx":true},
+      karotten: {"name":"Karotten","label":"1 kg, ca. 8 Stück","store":"Migros","unit":"stk","pack":8,"price":2,"approx":true},
+      fruehlingszw: {"name":"Frühlingszwiebeln","label":"1 Bund","store":"Migros","unit":"bund","pack":1,"price":1.8,"approx":true},
+      knoblauch: {"name":"Knoblauch","label":"1 Knolle, ca. 10 Zehen","store":"Migros","unit":"stk","pack":10,"price":1.5,"approx":true},
+      ingwer: {"name":"Ingwer","label":"1 Stück, ca. 100 g","store":"Migros","unit":"g","pack":100,"price":1,"approx":true},
+      lachs: {"name":"Lachsfiletportionen, tiefgekühlt","label":"500 g","store":"Aldi","unit":"g","pack":500,"price":9.69},
+      penne: {"name":"Rummo Penne Rigate","label":"2 kg","store":"Aldi","unit":"g","pack":2000,"price":4.99,"statt":5.99},
+      peterli: {"name":"Küchenkräuter (Peterli)","label":"1 Topf","store":"Aldi","unit":"stk","pack":1,"price":2.99},
+      brot: {"name":"Ruchbrot","label":"500 g","store":"Migros","unit":"stk","pack":1,"price":2.8,"approx":true}
+    },
+    recipes: [
+      {
+        id: "minestrone",
+        name: "Minestrone mit weissen Bohnen und Penne",
+        tags: ["italienisch","vegetarisch"],
+        time: "35 Min.",
+        minutes: 35,
+        items: [["weisskabis",400],["karotten",2],["lauch",200],["zwiebeln",1],["knoblauch",2],["tomaten",2],["bohnen",2],["penne",200],["gruyere",1],["peterli",0.5]],
+        pantry: ["Gemüsebouillon","Olivenöl","Pfeffer"],
+        ingredients: [
+          "400 g Weisskabis",
+          "2 Karotten",
+          "200 g Lauch",
+          "1 Zwiebel",
+          "2 Knoblauchzehen",
+          "2 Dosen gehackte Tomaten (460 g)",
+          "2 Dosen weisse Bohnen",
+          "200 g Penne",
+          "1,5 l Gemüsebouillon",
+          "2 EL Olivenöl",
+          "130 g Gruyère Reibkäse",
+          "Peterli, Pfeffer"
+        ],
+        steps: [
+          "Zwiebel und Knoblauch hacken. Karotten in kleine Würfel, Lauch in Ringe und Kabis in Streifen schneiden.",
+          "Öl in einem grossen Topf erhitzen. Zwiebel, Knoblauch, Karotten und Lauch 5 Minuten andünsten.",
+          "Kabis, Tomaten und Bouillon dazugeben, aufkochen und zugedeckt 10 Minuten köcheln.",
+          "Bohnen in einem Sieb abspülen. Zusammen mit den Penne in die Suppe geben.",
+          "Weitere 10 bis 12 Minuten köcheln, bis die Penne gar sind. Ab und zu umrühren, damit nichts ansetzt.",
+          "Mit Pfeffer abschmecken. Mit Gruyère und gehacktem Peterli servieren.",
+          "Für die Lunchboxen: Die Suppe dickt über Nacht ein. Beim Aufwärmen einen Schluck Wasser dazugeben."
+        ],
+        protein: 25
+      },
+      {
+        id: "lachs",
+        name: "Lachs und Süsskartoffeln vom Blech",
+        tags: ["fisch"],
+        time: "35 Min.",
+        minutes: 35,
+        items: [["lachs",500],["suesskartoffeln",1000],["datteltomaten",250],["zitronen",1],["peterli",0.5]],
+        pantry: ["Öl","Paprikapulver","Salz","Pfeffer"],
+        ingredients: [
+          "500 g Lachsfilet (am Morgen zum Auftauen in den Kühlschrank legen)",
+          "1 kg Süsskartoffeln",
+          "250 g Datteltomaten",
+          "1 Zitrone",
+          "2 EL Öl",
+          "1 TL Paprikapulver",
+          "Peterli, Salz, Pfeffer"
+        ],
+        steps: [
+          "Ofen auf 200 Grad Umluft vorheizen.",
+          "Süsskartoffeln waschen und mit Schale in Schnitze schneiden. Auf dem Blech mit Öl, Paprika und 1 TL Salz mischen.",
+          "Blech 15 Minuten in den Ofen schieben.",
+          "Lachs trockentupfen, salzen und pfeffern. Die halbe Zitrone in Scheiben schneiden.",
+          "Blech herausnehmen, Süsskartoffeln wenden, Lachs dazulegen und mit Zitronenscheiben belegen.",
+          "Weitere 12 bis 15 Minuten backen, bis der Lachs sich mit der Gabel leicht teilen lässt.",
+          "Datteltomaten halbieren und leicht salzen. Alles mit dem Saft der anderen Zitronenhälfte und gehacktem Peterli servieren."
+        ],
+        protein: 29
+      },
+      {
+        id: "suppe",
+        name: "Süsskartoffel-Lauch-Suppe mit knusprigen Kichererbsen",
+        tags: ["vegetarisch"],
+        time: "30 Min.",
+        minutes: 30,
+        items: [["suesskartoffeln",600],["lauch",400],["bohnen",1],["kichererbsen",1],["zwiebeln",1],["knoblauch",1],["zitronen",0.5]],
+        pantry: ["Gemüsebouillon","Öl","Paprikapulver","Salz","Pfeffer"],
+        ingredients: [
+          "600 g Süsskartoffeln",
+          "400 g Lauch",
+          "1 Dose weisse Bohnen",
+          "1 Dose Kichererbsen",
+          "1 Zwiebel",
+          "1 Knoblauchzehe",
+          "1 l Gemüsebouillon",
+          "2 EL Öl",
+          "1 TL Paprikapulver",
+          "½ Zitrone",
+          "Salz, Pfeffer"
+        ],
+        steps: [
+          "Lauch längs halbieren, gründlich waschen und in Ringe schneiden. Zwiebel und Knoblauch hacken, Süsskartoffeln schälen und würfeln.",
+          "1 EL Öl in einem grossen Topf erhitzen, Zwiebel, Knoblauch und Lauch 3 Minuten andünsten.",
+          "Süsskartoffeln, abgespülte Bohnen und Bouillon dazugeben, aufkochen und zugedeckt 15 Minuten köcheln.",
+          "In der Zwischenzeit die Kichererbsen abspülen und mit Küchenpapier gut trockentupfen. In einer Pfanne mit 1 EL Öl 8 bis 10 Minuten knusprig braten, mit Paprika und etwas Salz würzen.",
+          "Suppe mit dem Stabmixer pürieren. Ohne Mixer: mit dem Kartoffelstampfer grob zerdrücken.",
+          "Mit Zitronensaft und Pfeffer abschmecken, Kichererbsen darüberstreuen.",
+          "Für die Lunchboxen: Kichererbsen separat einpacken, damit sie knusprig bleiben."
+        ],
+        protein: 14
+      },
+      {
+        id: "reisnudeln",
+        name: "Reisnudel-Pfanne mit Tofu, Weisskabis und Ei",
+        tags: ["vegetarisch","schnell"],
+        time: "25 Min.",
+        minutes: 25,
+        items: [["reisnudeln",300],["tofu",400],["weisskabis",500],["karotten",2],["fruehlingszw",0.6],["eier",4],["knoblauch",2],["ingwer",30],["zitronen",0.5]],
+        pantry: ["Sojasauce","Öl"],
+        ingredients: [
+          "300 g Reisnudeln",
+          "400 g Tofu nature",
+          "500 g Weisskabis",
+          "2 Karotten",
+          "3 Frühlingszwiebeln",
+          "4 Eier",
+          "2 Knoblauchzehen",
+          "1 daumengrosses Stück Ingwer",
+          "5 EL Sojasauce",
+          "3 EL Öl",
+          "½ Zitrone"
+        ],
+        steps: [
+          "Reisnudeln nach Packungsangabe in heissem Wasser einweichen, abgiessen.",
+          "Tofu mit Küchenpapier trockendrücken und in 2-cm-Würfel schneiden. Weisskabis in feine Streifen, Karotten in dünne Stifte, Frühlingszwiebeln in Ringe schneiden. Knoblauch und Ingwer fein hacken.",
+          "2 EL Öl in einer grossen Pfanne stark erhitzen. Tofu 5 bis 6 Minuten rundum goldbraun braten, mit 1 EL Sojasauce ablöschen und auf einen Teller geben.",
+          "Restliches Öl in die Pfanne geben. Kabis und Karotten 5 Minuten unter Rühren braten, dann Knoblauch und Ingwer 1 Minute mitbraten.",
+          "Gemüse an den Rand schieben, Eier in die Mitte schlagen und zu Rührei verrühren.",
+          "Nudeln, Tofu und restliche Sojasauce dazugeben, alles 2 Minuten mischen.",
+          "Mit Zitronensaft abschmecken und Frühlingszwiebeln darüberstreuen."
+        ],
+        protein: 25
+      },
+      {
+        id: "penne-aubergine",
+        name: "Penne mit Auberginen-Tomaten-Sauce",
+        tags: ["italienisch","vegetarisch"],
+        time: "30 Min.",
+        minutes: 30,
+        items: [["penne",500],["aubergine",2],["tomaten",3],["zwiebeln",1],["knoblauch",2],["gruyere",1]],
+        pantry: ["Olivenöl","Salz","Pfeffer"],
+        ingredients: [
+          "500 g Penne",
+          "2 Auberginen",
+          "3 Dosen gehackte Tomaten (690 g)",
+          "1 Zwiebel",
+          "2 Knoblauchzehen",
+          "3 EL Olivenöl",
+          "130 g Gruyère Reibkäse",
+          "Salz, Pfeffer"
+        ],
+        steps: [
+          "Auberginen in 2-cm-Würfel schneiden, Zwiebel und Knoblauch hacken.",
+          "Öl in einer grossen Pfanne erhitzen, Auberginen mit ½ TL Salz 8 Minuten braten, bis sie weich und leicht braun sind.",
+          "Zwiebel und Knoblauch 2 Minuten mitbraten.",
+          "Tomaten dazugeben und 15 Minuten offen köcheln lassen.",
+          "Gleichzeitig Penne in reichlich Salzwasser nach Packungsangabe kochen. Vor dem Abgiessen eine Tasse Kochwasser aufheben.",
+          "Penne mit der Sauce mischen, bei Bedarf etwas Kochwasser dazugeben. Mit Pfeffer abschmecken.",
+          "Mit Gruyère bestreuen."
+        ],
+        protein: 26
+      },
+      {
+        id: "poulet-ofen",
+        name: "Zwei Poulets aus dem Ofen mit Gemüse",
+        tags: ["poulet"],
+        time: "15 Min. + 75 Min. Ofen",
+        minutes: 90,
+        items: [["poulet",2],["suesskartoffeln",1000],["lauch",400],["zwiebeln",2],["zitronen",1],["knoblauch",3]],
+        pantry: ["Öl","Paprikapulver","Salz","Pfeffer"],
+        ingredients: [
+          "2 Poulets (aufgetaut)",
+          "1 kg Süsskartoffeln",
+          "400 g Lauch",
+          "2 Zwiebeln",
+          "1 Zitrone",
+          "3 Knoblauchzehen",
+          "3 EL Öl",
+          "2 TL Paprikapulver",
+          "Salz, Pfeffer"
+        ],
+        steps: [
+          "Ofen auf 200 Grad Ober- und Unterhitze vorheizen.",
+          "Poulets trockentupfen. Jedes mit 1 EL Öl, 1 TL Paprika, 1 TL Salz und Pfeffer einreiben. Je eine Zitronenhälfte in den Bauch stecken.",
+          "Süsskartoffeln in grobe Stücke, Lauch in 3-cm-Stücke, Zwiebeln in Viertel schneiden. Mit dem ganzen Knoblauch und 1 EL Öl auf einem tiefen Blech verteilen, salzen.",
+          "Poulets mit der Brust nach oben auf das Gemüse setzen.",
+          "70 bis 80 Minuten braten. Das Poulet ist gar, wenn beim Einstechen am Schenkel klarer Saft austritt.",
+          "10 Minuten ruhen lassen, dann ein Poulet zerteilen und mit dem Gemüse servieren.",
+          "Vom zweiten Poulet das Fleisch ablösen und im Kühlschrank aufbewahren. Die Knochen von beiden Poulets für Sonntag aufheben."
+        ],
+        note: "Poulets beim Einkauf einfrieren und am Donnerstagabend in den Kühlschrank legen.",
+        protein: 40
+      },
+      {
+        id: "poulet-suppe",
+        name: "Poulet-Nudelsuppe",
+        tags: ["poulet"],
+        time: "20 Min. + 60 Min. köcheln",
+        minutes: 80,
+        items: [["weisskabis",300],["karotten",2],["zwiebeln",1],["ingwer",30],["reisnudeln",200],["zitronen",0.5],["fruehlingszw",0.4]],
+        needs: "poulet-ofen",
+        fallback: [["poulet",1]],
+        pantry: ["Sojasauce","Salz"],
+        ingredients: [
+          "Knochen und Restfleisch vom Ofen-Poulet",
+          "2 l Wasser",
+          "1 Zwiebel",
+          "2 Karotten",
+          "300 g Weisskabis",
+          "1 Stück Ingwer",
+          "200 g Reisnudeln",
+          "2 EL Sojasauce",
+          "½ Zitrone",
+          "restliche Frühlingszwiebeln",
+          "Salz"
+        ],
+        steps: [
+          "Knochen mit Wasser, der halbierten Zwiebel, Ingwerscheiben und 1 TL Salz in einem grossen Topf aufkochen.",
+          "Hitze reduzieren und 60 Minuten leise köcheln lassen. Schaum an der Oberfläche abschöpfen.",
+          "Brühe durch ein Sieb in einen zweiten Topf giessen, Knochen entsorgen.",
+          "Karotten in Scheiben und Kabis in Streifen schneiden. In der Brühe 8 Minuten kochen.",
+          "Reisnudeln und Pouletfleisch dazugeben und 3 Minuten ziehen lassen.",
+          "Mit Sojasauce, Zitronensaft und Salz abschmecken, Frühlingszwiebeln darüberstreuen.",
+          "Für die Lunchboxen: Nudeln separat einpacken, sonst saugen sie die Brühe auf."
+        ],
+        note: "Braucht die Reste vom Ofen-Poulet. Ohne Ofen-Poulet kommt automatisch ein Poulet auf die Einkaufsliste: dann das ganze Poulet in Schritt 1 mitkochen und nach 60 Minuten das Fleisch ablösen.",
+        protein: 30
+      },
+      {
+        id: "pasta-ceci",
+        name: "Pasta e ceci (Penne mit Kichererbsen)",
+        tags: ["italienisch","vegetarisch","schnell"],
+        time: "25 Min.",
+        minutes: 25,
+        items: [["penne",400],["kichererbsen",2],["tomaten",2],["zwiebeln",1],["knoblauch",2],["karotten",1],["gruyere",1]],
+        pantry: ["Gemüsebouillon","Olivenöl","Rosmarin, getrocknet","Salz","Pfeffer"],
+        ingredients: [
+          "400 g Penne",
+          "2 Dosen Kichererbsen",
+          "2 Dosen gehackte Tomaten (460 g)",
+          "1 Zwiebel",
+          "2 Knoblauchzehen",
+          "1 Karotte",
+          "800 ml Gemüsebouillon",
+          "3 EL Olivenöl",
+          "1 TL Rosmarin",
+          "130 g Gruyère Reibkäse",
+          "Salz, Pfeffer"
+        ],
+        steps: [
+          "Zwiebel, Knoblauch und Karotte fein hacken.",
+          "2 EL Olivenöl in einem grossen Topf erhitzen. Gemüse mit dem Rosmarin 5 Minuten andünsten.",
+          "Kichererbsen abspülen. Mit Tomaten und Bouillon in den Topf geben und aufkochen.",
+          "Eine Kelle Kichererbsen herausnehmen, mit der Gabel zerdrücken und zurückgeben. So wird es sämig.",
+          "Penne roh dazugeben und 12 Minuten köcheln, dabei oft umrühren. Wird es zu dick, etwas Wasser nachgiessen.",
+          "Mit Salz und Pfeffer abschmecken. Mit Gruyère und einem Schuss Olivenöl servieren.",
+          "Für die Lunchboxen: Dickt ein, beim Aufwärmen etwas Wasser dazugeben."
+        ],
+        protein: 30
+      },
+      {
+        id: "linsen-bolognese",
+        name: "Linsen-Bolognese mit Penne",
+        tags: ["italienisch","vegetarisch"],
+        time: "35 Min.",
+        minutes: 35,
+        items: [["linsen",250],["tomaten",3],["karotten",2],["zwiebeln",1],["knoblauch",2],["penne",500],["gruyere",1]],
+        pantry: ["Olivenöl","Gemüsebouillon","Oregano","Salz","Pfeffer"],
+        ingredients: [
+          "250 g rote Linsen",
+          "3 Dosen gehackte Tomaten (690 g)",
+          "2 Karotten",
+          "1 Zwiebel",
+          "2 Knoblauchzehen",
+          "500 ml Gemüsebouillon",
+          "500 g Penne",
+          "2 EL Olivenöl",
+          "1 TL Oregano",
+          "130 g Gruyère Reibkäse",
+          "Salz, Pfeffer"
+        ],
+        steps: [
+          "Zwiebel, Knoblauch und Karotten fein hacken.",
+          "Olivenöl in einem Topf erhitzen, Gemüse 5 Minuten andünsten.",
+          "Linsen in einem Sieb abspülen. Mit Tomaten, Bouillon und Oregano dazugeben.",
+          "Aufkochen und 20 Minuten köcheln, bis die Linsen weich sind. Ab und zu umrühren.",
+          "Gleichzeitig Penne in Salzwasser nach Packungsangabe kochen und abgiessen.",
+          "Sauce mit Salz und Pfeffer abschmecken, mit den Penne mischen.",
+          "Mit Gruyère bestreuen. Die Sauce lässt sich gut einfrieren."
+        ],
+        protein: 38
+      },
+      {
+        id: "gnocchi-gratin",
+        name: "Gnocchi-Gratin mit Aubergine und Mozzarella",
+        tags: ["italienisch","vegetarisch","schnell"],
+        time: "30 Min.",
+        minutes: 30,
+        items: [["gnocchi",800],["aubergine",1],["tomaten",2],["bohnen",1],["mozzarella",2],["zwiebeln",1],["knoblauch",1]],
+        pantry: ["Olivenöl","Oregano","Salz","Pfeffer"],
+        ingredients: [
+          "800 g Gnocchi",
+          "1 Aubergine",
+          "2 Dosen gehackte Tomaten (460 g)",
+          "1 Dose weisse Bohnen",
+          "2 Mozzarella (300 g)",
+          "1 Zwiebel",
+          "1 Knoblauchzehe",
+          "2 EL Olivenöl",
+          "1 TL Oregano",
+          "Salz, Pfeffer"
+        ],
+        steps: [
+          "Ofen auf 220 Grad Ober- und Unterhitze vorheizen.",
+          "Aubergine würfeln, Zwiebel und Knoblauch hacken.",
+          "Olivenöl in einer Pfanne erhitzen, Aubergine 6 Minuten braten, Zwiebel und Knoblauch 2 Minuten mitbraten.",
+          "Tomaten, abgespülte Bohnen und Oregano dazugeben, 5 Minuten köcheln, salzen und pfeffern.",
+          "Gnocchi roh unter die Sauce mischen und alles in eine Auflaufform geben.",
+          "Mozzarella zerzupfen und darauf verteilen.",
+          "15 Minuten backen, bis der Käse goldbraun ist."
+        ],
+        protein: 24
+      },
+      {
+        id: "risotto",
+        name: "Lauch-Risotto mit weissen Bohnen",
+        tags: ["italienisch","vegetarisch"],
+        time: "40 Min.",
+        minutes: 40,
+        items: [["risottoreis",350],["lauch",400],["bohnen",2],["zwiebeln",1],["zitronen",0.5],["gruyere",1]],
+        pantry: ["Gemüsebouillon","Olivenöl","Butter","Pfeffer"],
+        ingredients: [
+          "350 g Risottoreis",
+          "400 g Lauch",
+          "2 Dosen weisse Bohnen",
+          "1 Zwiebel",
+          "1,2 l heisse Gemüsebouillon",
+          "2 EL Olivenöl",
+          "1 EL Butter",
+          "½ Zitrone",
+          "130 g Gruyère Reibkäse",
+          "Pfeffer"
+        ],
+        steps: [
+          "Bouillon in einem kleinen Topf heiss halten. Zwiebel hacken, Lauch in feine Ringe schneiden.",
+          "Olivenöl in einem breiten Topf erhitzen. Zwiebel und Lauch 4 Minuten andünsten.",
+          "Reis dazugeben und 1 Minute rühren, bis er glasig ist.",
+          "Eine Kelle Bouillon dazugeben und rühren, bis sie fast aufgesogen ist. So weitermachen, etwa 18 Minuten lang.",
+          "Bohnen abspülen und in den letzten 5 Minuten dazugeben.",
+          "Topf vom Herd nehmen. Butter, Gruyère und etwas Zitronensaft unterrühren, 2 Minuten ruhen lassen.",
+          "Mit Pfeffer abschmecken. Für die Lunchboxen beim Aufwärmen etwas Wasser dazugeben."
+        ],
+        protein: 23
+      },
+      {
+        id: "shakshuka",
+        name: "Shakshuka mit Kichererbsen und Brot",
+        tags: ["vegetarisch","schnell"],
+        time: "25 Min.",
+        minutes: 25,
+        protein: 30,
+        items: [["eier",8],["kichererbsen",2],["tomaten",3],["zwiebeln",1],["knoblauch",2],["peterli",0.5],["brot",1]],
+        pantry: ["Olivenöl","Paprikapulver","Kreuzkümmel","Salz","Pfeffer"],
+        ingredients: [
+          "8 Eier",
+          "2 Dosen Kichererbsen",
+          "3 Dosen gehackte Tomaten (690 g)",
+          "1 Zwiebel",
+          "2 Knoblauchzehen",
+          "2 EL Olivenöl",
+          "1 TL Paprikapulver",
+          "½ TL Kreuzkümmel",
+          "Peterli",
+          "1 Ruchbrot",
+          "Salz, Pfeffer"
+        ],
+        steps: [
+          "Zwiebel und Knoblauch hacken.",
+          "Olivenöl in einer grossen Bratpfanne erhitzen. Zwiebel 4 Minuten andünsten, dann Knoblauch, Paprika und Kreuzkümmel 1 Minute mitrösten.",
+          "Tomaten und abgespülte Kichererbsen dazugeben, salzen und 10 Minuten offen köcheln, bis die Sauce eindickt.",
+          "Mit einem Löffel 8 Mulden in die Sauce drücken und in jede ein Ei schlagen.",
+          "Deckel drauflegen und bei kleiner Hitze 6 bis 8 Minuten garen, bis das Eiweiss fest ist.",
+          "Mit gehacktem Peterli bestreuen und mit Brot servieren.",
+          "Für die Lunchboxen: Die Eier etwas länger garen, bis auch das Eigelb fest ist. Schmeckt aufgewärmt oder kalt mit Brot."
+        ]
+      }
     ],
-    note: "Poulets beim Einkauf einfrieren und am Donnerstagabend in den Kühlschrank legen."
-  },
-  {
-    id: "poulet-suppe", name: "Poulet-Nudelsuppe", tags: ["poulet"], time: "20 Min. + 60 Min. köcheln", minutes: 80,
-    items: [["weisskabis", 300], ["karotten", 2], ["zwiebeln", 1], ["ingwer", 30], ["reisnudeln", 200], ["zitronen", 0.5], ["fruehlingszw", 0.4]],
-    needs: "poulet-ofen", fallback: [["poulet", 1]],
-    pantry: ["Sojasauce", "Salz"],
-    ingredients: ["Knochen und Restfleisch vom Ofen-Poulet", "2 l Wasser", "1 Zwiebel", "2 Karotten", "300 g Weisskabis", "1 Stück Ingwer", "200 g Reisnudeln", "2 EL Sojasauce", "½ Zitrone", "restliche Frühlingszwiebeln", "Salz"],
-    steps: [
-      "Knochen mit Wasser, der halbierten Zwiebel, Ingwerscheiben und 1 TL Salz in einem grossen Topf aufkochen.",
-      "Hitze reduzieren und 60 Minuten leise köcheln lassen. Schaum an der Oberfläche abschöpfen.",
-      "Brühe durch ein Sieb in einen zweiten Topf giessen, Knochen entsorgen.",
-      "Karotten in Scheiben und Kabis in Streifen schneiden. In der Brühe 8 Minuten kochen.",
-      "Reisnudeln und Pouletfleisch dazugeben und 3 Minuten ziehen lassen.",
-      "Mit Sojasauce, Zitronensaft und Salz abschmecken, Frühlingszwiebeln darüberstreuen.",
-      "Für die Lunchboxen: Nudeln separat einpacken, sonst saugen sie die Brühe auf."
-    ],
-    note: "Braucht die Reste vom Ofen-Poulet. Ohne Ofen-Poulet kommt automatisch ein Poulet auf die Einkaufsliste: dann das ganze Poulet in Schritt 1 mitkochen und nach 60 Minuten das Fleisch ablösen."
-  },
-  {
-    id: "pasta-ceci", name: "Pasta e ceci (Penne mit Kichererbsen)", tags: ["italienisch", "vegetarisch", "schnell"], time: "25 Min.", minutes: 25,
-    items: [["penne", 400], ["kichererbsen", 2], ["tomaten", 2], ["zwiebeln", 1], ["knoblauch", 2], ["karotten", 1], ["gruyere", 1]],
-    pantry: ["Gemüsebouillon", "Olivenöl", "Rosmarin, getrocknet", "Salz", "Pfeffer"],
-    ingredients: ["400 g Penne", "2 Dosen Kichererbsen", "2 Dosen gehackte Tomaten (460 g)", "1 Zwiebel", "2 Knoblauchzehen", "1 Karotte", "800 ml Gemüsebouillon", "3 EL Olivenöl", "1 TL Rosmarin", "130 g Gruyère Reibkäse", "Salz, Pfeffer"],
-    steps: [
-      "Zwiebel, Knoblauch und Karotte fein hacken.",
-      "2 EL Olivenöl in einem grossen Topf erhitzen. Gemüse mit dem Rosmarin 5 Minuten andünsten.",
-      "Kichererbsen abspülen. Mit Tomaten und Bouillon in den Topf geben und aufkochen.",
-      "Eine Kelle Kichererbsen herausnehmen, mit der Gabel zerdrücken und zurückgeben. So wird es sämig.",
-      "Penne roh dazugeben und 12 Minuten köcheln, dabei oft umrühren. Wird es zu dick, etwas Wasser nachgiessen.",
-      "Mit Salz und Pfeffer abschmecken. Mit Gruyère und einem Schuss Olivenöl servieren.",
-      "Für die Lunchboxen: Dickt ein, beim Aufwärmen etwas Wasser dazugeben."
-    ]
-  },
-  {
-    id: "linsen-bolognese", name: "Linsen-Bolognese mit Penne", tags: ["italienisch", "vegetarisch"], time: "35 Min.", minutes: 35,
-    items: [["linsen", 250], ["tomaten", 3], ["karotten", 2], ["zwiebeln", 1], ["knoblauch", 2], ["penne", 500], ["gruyere", 1]],
-    pantry: ["Olivenöl", "Gemüsebouillon", "Oregano", "Salz", "Pfeffer"],
-    ingredients: ["250 g rote Linsen", "3 Dosen gehackte Tomaten (690 g)", "2 Karotten", "1 Zwiebel", "2 Knoblauchzehen", "500 ml Gemüsebouillon", "500 g Penne", "2 EL Olivenöl", "1 TL Oregano", "130 g Gruyère Reibkäse", "Salz, Pfeffer"],
-    steps: [
-      "Zwiebel, Knoblauch und Karotten fein hacken.",
-      "Olivenöl in einem Topf erhitzen, Gemüse 5 Minuten andünsten.",
-      "Linsen in einem Sieb abspülen. Mit Tomaten, Bouillon und Oregano dazugeben.",
-      "Aufkochen und 20 Minuten köcheln, bis die Linsen weich sind. Ab und zu umrühren.",
-      "Gleichzeitig Penne in Salzwasser nach Packungsangabe kochen und abgiessen.",
-      "Sauce mit Salz und Pfeffer abschmecken, mit den Penne mischen.",
-      "Mit Gruyère bestreuen. Die Sauce lässt sich gut einfrieren."
-    ]
-  },
-  {
-    id: "gnocchi-gratin", name: "Gnocchi-Gratin mit Aubergine und Mozzarella", tags: ["italienisch", "vegetarisch", "schnell"], time: "30 Min.", minutes: 30,
-    items: [["gnocchi", 800], ["aubergine", 1], ["tomaten", 2], ["bohnen", 1], ["mozzarella", 2], ["zwiebeln", 1], ["knoblauch", 1]],
-    pantry: ["Olivenöl", "Oregano", "Salz", "Pfeffer"],
-    ingredients: ["800 g Gnocchi", "1 Aubergine", "2 Dosen gehackte Tomaten (460 g)", "1 Dose weisse Bohnen", "2 Mozzarella (300 g)", "1 Zwiebel", "1 Knoblauchzehe", "2 EL Olivenöl", "1 TL Oregano", "Salz, Pfeffer"],
-    steps: [
-      "Ofen auf 220 Grad Ober- und Unterhitze vorheizen.",
-      "Aubergine würfeln, Zwiebel und Knoblauch hacken.",
-      "Olivenöl in einer Pfanne erhitzen, Aubergine 6 Minuten braten, Zwiebel und Knoblauch 2 Minuten mitbraten.",
-      "Tomaten, abgespülte Bohnen und Oregano dazugeben, 5 Minuten köcheln, salzen und pfeffern.",
-      "Gnocchi roh unter die Sauce mischen und alles in eine Auflaufform geben.",
-      "Mozzarella zerzupfen und darauf verteilen.",
-      "15 Minuten backen, bis der Käse goldbraun ist."
-    ]
-  },
-  {
-    id: "risotto", name: "Lauch-Risotto mit weissen Bohnen", tags: ["italienisch", "vegetarisch"], time: "40 Min.", minutes: 40,
-    items: [["risottoreis", 350], ["lauch", 400], ["bohnen", 2], ["zwiebeln", 1], ["zitronen", 0.5], ["gruyere", 1]],
-    pantry: ["Gemüsebouillon", "Olivenöl", "Butter", "Pfeffer"],
-    ingredients: ["350 g Risottoreis", "400 g Lauch", "2 Dosen weisse Bohnen", "1 Zwiebel", "1,2 l heisse Gemüsebouillon", "2 EL Olivenöl", "1 EL Butter", "½ Zitrone", "130 g Gruyère Reibkäse", "Pfeffer"],
-    steps: [
-      "Bouillon in einem kleinen Topf heiss halten. Zwiebel hacken, Lauch in feine Ringe schneiden.",
-      "Olivenöl in einem breiten Topf erhitzen. Zwiebel und Lauch 4 Minuten andünsten.",
-      "Reis dazugeben und 1 Minute rühren, bis er glasig ist.",
-      "Eine Kelle Bouillon dazugeben und rühren, bis sie fast aufgesogen ist. So weitermachen, etwa 18 Minuten lang.",
-      "Bohnen abspülen und in den letzten 5 Minuten dazugeben.",
-      "Topf vom Herd nehmen. Butter, Gruyère und etwas Zitronensaft unterrühren, 2 Minuten ruhen lassen.",
-      "Mit Pfeffer abschmecken. Für die Lunchboxen beim Aufwärmen etwas Wasser dazugeben."
-    ]
+    defaultSel: {"mo":"minestrone","di":"lachs","mi":"suppe","do":"reisnudeln","fr":"penne-aubergine","sa":"poulet-ofen","so":"poulet-suppe"}
   }
 ];
-
-const DEFAULT_SEL = { mo: "minestrone", di: "lachs", mi: "suppe", do: "reisnudeln", fr: "penne-aubergine", sa: "poulet-ofen", so: "poulet-suppe" };
-const PORTIONS = 4;

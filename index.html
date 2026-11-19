@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#2f6a43">
+<meta name="theme-color" content="#24533a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -11,132 +11,140 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-
 <title>Unser Essplan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-/* Layout: one narrow column for the phone, three views behind a tab bar (Woche, Rezepte, Einkauf). */
+/* Layout: eine schmale Spalte fürs Handy. Startseite (Heute, Lust, Wochen) und pro Woche drei Bereiche: Plan, Rezepte, Einkauf. */
 :root {
-  --bg: #f3f5f1;
+  --bg: #f2f4ef;
   --surface: #ffffff;
-  --ink: #1c231e;
-  --muted: #5d6a61;
-  --line: #dde3dc;
-  --accent: #2f6a43;
-  --accent-soft: #e2efe5;
-  --deal: #b93a24;
-  --deal-soft: #fbe9e4;
+  --ink: #1b2420;
+  --muted: #5b6a61;
+  --line: #dde3da;
+  --accent: #24533a;
+  --accent-ink: #ffffff;
+  --accent-soft: #e1eee4;
+  --tomato: #c2452b;
+  --tomato-soft: #fbe8e2;
+  --sun: #f2c14e;
   --warn: #8a5a00;
   --warn-soft: #fdf1d8;
   --font-display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
   --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
-  --radius: 14px;
+  --radius: 18px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #131815;
-    --surface: #1c231f;
-    --ink: #e8eee9;
-    --muted: #9eaca3;
-    --line: #2e3832;
-    --accent: #79c08f;
-    --accent-soft: #1f3327;
-    --deal: #f08a72;
-    --deal-soft: #3a211b;
-    --warn: #f0c46a;
-    --warn-soft: #362b14;
-    color-scheme: dark;
+    --bg: #111613; --surface: #1a221d; --ink: #e8eee9; --muted: #9daba2; --line: #2c3730;
+    --accent: #7cc395; --accent-ink: #0f1a13; --accent-soft: #1d3326; --tomato: #f08b72; --tomato-soft: #3a211b;
+    --sun: #e6b84a; --warn: #f0c46a; --warn-soft: #362b14; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #131815;
-  --surface: #1c231f;
-  --ink: #e8eee9;
-  --muted: #9eaca3;
-  --line: #2e3832;
-  --accent: #79c08f;
-  --accent-soft: #1f3327;
-  --deal: #f08a72;
-  --deal-soft: #3a211b;
-  --warn: #f0c46a;
-  --warn-soft: #362b14;
-  color-scheme: dark;
+  --bg: #111613; --surface: #1a221d; --ink: #e8eee9; --muted: #9daba2; --line: #2c3730;
+  --accent: #7cc395; --accent-ink: #0f1a13; --accent-soft: #1d3326; --tomato: #f08b72; --tomato-soft: #3a211b;
+  --sun: #e6b84a; --warn: #f0c46a; --warn-soft: #362b14; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font-body);
-  font-size: 17px;
-  line-height: 1.45;
-}
-.wrap { max-width: 640px; margin: 0 auto; padding: calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); display: grid; gap: 16px; }
-h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
-h1 { font-size: 30px; }
-h2 { font-size: 22px; }
-h3 { font-size: 19px; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.45; -webkit-tap-highlight-color: transparent; }
+.wrap { max-width: 640px; margin: 0 auto; padding: calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(90px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); display: grid; gap: 16px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.12; }
+h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 22px; font-weight: 700; }
+h3 { font-size: 19px; font-weight: 700; }
 .num { font-variant-numeric: tabular-nums; }
 .muted { color: var(--muted); }
-small, .small { font-size: 14px; }
+.small { font-size: 14px; }
+.eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+button { font-family: var(--font-body); }
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
-header { display: grid; gap: 10px; }
-.sub { color: var(--muted); font-size: 15px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 10px; }
+.section { display: grid; gap: 10px; }
+.row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+
+/* Startseite */
+.hello { display: grid; gap: 2px; padding-top: 4px; }
+.today { background: var(--accent); color: var(--accent-ink); border-radius: 22px; padding: 18px; display: grid; gap: 12px; position: relative; overflow: hidden; }
+.today::after { content: ""; position: absolute; right: -40px; top: -40px; width: 150px; height: 150px; border-radius: 50%; background: color-mix(in srgb, var(--sun) 35%, transparent); }
+.today::before { content: ""; position: absolute; right: 40px; bottom: -60px; width: 120px; height: 120px; border-radius: 50%; background: color-mix(in srgb, var(--accent-ink) 10%, transparent); }
+.today > * { position: relative; z-index: 1; }
+.today .eyebrow { color: color-mix(in srgb, var(--accent-ink) 75%, transparent); }
+.today h2 { font-size: 26px; }
+.today .facts { display: flex; flex-wrap: wrap; gap: 6px; }
+.today .fact { font-size: 14px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--accent-ink) 16%, transparent); }
+.today .btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn-light { border: 0; background: var(--accent-ink); color: var(--accent); font-weight: 700; font-size: 16px; padding: 10px 16px; border-radius: 999px; cursor: pointer; }
+.btn-outline-light { border: 1.5px solid color-mix(in srgb, var(--accent-ink) 60%, transparent); background: transparent; color: var(--accent-ink); font-weight: 700; font-size: 16px; padding: 9px 15px; border-radius: 999px; cursor: pointer; }
+
+.quick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile { text-align: left; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: var(--radius); padding: 14px; display: grid; gap: 6px; cursor: pointer; }
+.tile b { font-family: var(--font-display); font-size: 22px; }
+.tile .bar { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.tile .bar > i { display: block; height: 100%; background: var(--accent); }
+
+.weeks { display: grid; gap: 8px; }
+.week-row { display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center; text-align: left; width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; }
+.week-badge { width: 52px; height: 52px; border-radius: 14px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 13px; line-height: 1.05; text-align: center; }
+.week-badge big { display: block; font-size: 20px; }
+.week-row.past .week-badge { background: var(--line); color: var(--muted); }
+.status { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.status.next { background: color-mix(in srgb, var(--sun) 30%, var(--surface)); color: var(--ink); }
+.status.past { background: var(--line); color: var(--muted); }
+
+/* Lust-Auswahl */
+.moods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mood { border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 16px; padding: 10px 6px; display: grid; justify-items: center; gap: 4px; cursor: pointer; font-weight: 700; font-size: 14px; text-align: center; line-height: 1.15; }
+.mood svg { width: 26px; height: 26px; stroke: var(--accent); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.mood[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.primary { border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 17px; padding: 13px 18px; border-radius: 999px; cursor: pointer; width: 100%; }
+.ghost { border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-weight: 600; font-size: 15px; padding: 9px 14px; border-radius: 999px; cursor: pointer; }
+.toast { font-size: 15px; color: var(--accent); font-weight: 600; min-height: 1em; }
+
+/* Wochenansicht */
+.topbar { display: flex; align-items: center; gap: 10px; }
+.back { border: 0; background: var(--surface); border: 1px solid var(--line); color: var(--ink); font-weight: 700; font-size: 15px; padding: 8px 14px; border-radius: 999px; cursor: pointer; }
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; }
-.stat b { display: block; font-family: var(--font-display); font-size: 22px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.stat b { display: block; font-family: var(--font-display); font-size: 20px; }
 .stat span { color: var(--muted); font-size: 13px; }
+nav.tabs-wrap { position: sticky; top: env(safe-area-inset-top); z-index: 5; background: var(--bg); padding: 6px 0; }
+.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+.tabs button { border: 0; background: transparent; color: var(--ink); font-weight: 700; font-size: 15px; padding: 9px 4px; border-radius: 999px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
 .pills { display: flex; flex-wrap: wrap; gap: 6px; }
-.pill { font-size: 13px; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.pill { font-size: 13px; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 700; }
 .pill.warn { background: var(--warn-soft); color: var(--warn); }
-.pill.deal { background: var(--deal-soft); color: var(--deal); }
-.sync { font-size: 13px; color: var(--muted); }
+.note { border-radius: 14px; padding: 10px 14px; font-size: 15px; background: var(--warn-soft); color: var(--warn); }
 
-nav { position: sticky; top: env(safe-area-inset-top); z-index: 5; background: var(--bg); padding: 6px 0; }
-.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
-.tabs button { border: 0; background: transparent; color: var(--ink); font: 600 16px var(--font-body); padding: 9px 4px; border-radius: 999px; cursor: pointer; }
-.tabs button[aria-selected="true"] { background: var(--accent); color: var(--surface); }
-button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-
-.view { display: grid; gap: 12px; }
-.view[hidden] { display: none; }
-.filters { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 600 15px var(--font-body); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
-.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: grid; gap: 8px; }
-.day { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start; }
-.day-label { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--accent); padding-top: 8px; }
+.day { display: grid; grid-template-columns: 46px 1fr; gap: 12px; align-items: start; }
+.day-label { font-family: var(--font-display); font-weight: 800; font-size: 18px; color: var(--accent); padding-top: 7px; }
+.day.is-today .day-label { color: var(--tomato); }
 .day-body { display: grid; gap: 6px; min-width: 0; }
-select { width: 100%; font: 600 17px var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; }
+select { width: 100%; font: 600 17px var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 9px 10px; }
 .meta { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 14px; color: var(--muted); align-items: center; }
-.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font: 600 14px var(--font-body); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-.note { border-radius: var(--radius); padding: 10px 14px; font-size: 15px; background: var(--warn-soft); color: var(--warn); }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font: 700 14px var(--font-body); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
 details.recipe { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
-details.recipe summary { list-style: none; cursor: pointer; padding: 14px; display: grid; gap: 4px; }
+details.recipe summary { list-style: none; cursor: pointer; padding: 14px 16px; display: grid; gap: 4px; }
 details.recipe summary::-webkit-details-marker { display: none; }
-details.recipe summary .row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
-details.recipe summary .row::after { content: "Öffnen"; font-size: 14px; color: var(--accent); font-weight: 600; flex: none; }
+details.recipe summary .row::after { content: "Öffnen"; font-size: 14px; color: var(--accent); font-weight: 700; flex: none; }
 details.recipe[open] summary .row::after { content: "Schliessen"; }
-.recipe-body { padding: 0 14px 16px; display: grid; gap: 12px; }
+.recipe-body { padding: 0 16px 16px; display: grid; gap: 12px; }
 .recipe-body ul { margin: 0; padding-left: 20px; }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: s; }
-.steps li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--bg); cursor: pointer; }
-.steps li::before { content: counter(s); font-family: var(--font-display); font-weight: 700; color: var(--accent); font-size: 18px; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 10px; padding: 9px 10px; border-radius: 12px; background: var(--bg); cursor: pointer; }
+.steps li::before { content: counter(s); font-family: var(--font-display); font-weight: 800; color: var(--accent); font-size: 18px; }
 .steps li.done { opacity: .5; text-decoration: line-through; }
-.primary { border: 0; background: var(--accent); color: var(--surface); font: 700 16px var(--font-body); padding: 11px 16px; border-radius: 999px; cursor: pointer; justify-self: start; }
-.ghost { border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 600 15px var(--font-body); padding: 9px 14px; border-radius: 999px; cursor: pointer; }
 
 .progress { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; }
 .progress > div { height: 100%; background: var(--accent); transition: width .2s; }
-.shop-head { display: grid; gap: 8px; }
-.shop-head .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.group { display: grid; gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.group { display: grid; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .group h3 { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
 .group h3 span { font-family: var(--font-body); font-size: 15px; color: var(--muted); font-weight: 600; }
 .item { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--line); align-items: start; cursor: pointer; }
@@ -148,50 +156,37 @@ details.recipe[open] summary .row::after { content: "Schliessen"; }
 .item .price s { display: block; font-weight: 400; font-size: 13px; color: var(--muted); }
 .item.checked .name, .item.checked .info, .item.checked .price { opacity: .45; }
 .item.checked .name { text-decoration: line-through; }
-.tag-deal { display: inline-block; font-size: 12px; font-weight: 700; color: var(--deal); background: var(--deal-soft); border-radius: 6px; padding: 0 6px; margin-left: 6px; vertical-align: 2px; }
+.tag-deal { display: inline-block; font-size: 12px; font-weight: 700; color: var(--tomato); background: var(--tomato-soft); border-radius: 6px; padding: 0 6px; margin-left: 6px; vertical-align: 2px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .cook { position: fixed; inset: 0; z-index: 20; background: var(--bg); display: grid; grid-template-rows: auto 1fr auto; padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); gap: 16px; }
 .cook[hidden] { display: none; }
-.cook-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; max-width: 640px; width: 100%; margin: 0 auto; }
-.cook-main { max-width: 640px; width: 100%; margin: 0 auto; display: grid; align-content: center; gap: 16px; overflow-y: auto; }
-.cook-step { font-size: 24px; line-height: 1.4; }
-.cook-count { font-family: var(--font-display); color: var(--accent); font-size: 18px; font-weight: 700; }
-.cook-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 640px; width: 100%; margin: 0 auto; }
-.cook-nav button { padding: 16px; font-size: 18px; justify-self: stretch; }
+.cook-top, .cook-main, .cook-nav { max-width: 640px; width: 100%; margin: 0 auto; }
+.cook-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.cook-main { display: grid; align-content: center; gap: 16px; overflow-y: auto; }
+.cook-step { font-size: 25px; line-height: 1.4; }
+.cook-count { font-family: var(--font-display); color: var(--accent); font-size: 18px; font-weight: 800; }
+.cook-dots { display: flex; gap: 6px; }
+.cook-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.cook-dots i.on { background: var(--accent); }
+.cook-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cook-nav button { padding: 16px; font-size: 18px; }
 .footer { font-size: 13px; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-weight: 700; font-size: 14px; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.dish.picked { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+.src { color: var(--accent); font-weight: 700; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; justify-self: start; }
+.banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; text-align: left; border: 0; border-radius: var(--radius); padding: 14px 16px; background: color-mix(in srgb, var(--sun) 35%, var(--surface)); color: var(--ink); cursor: pointer; font-size: 16px; }
+.banner > span:last-child { font-size: 28px; font-weight: 700; }
+a.linkish { display: block; text-align: center; text-decoration: none; }
+[hidden] { display: none !important; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
-@media (max-width: 400px) { .stats { grid-template-columns: 1fr 1fr; } .stat:last-child { grid-column: span 2; } }
+@media (max-width: 380px) { .moods { grid-template-columns: repeat(2, 1fr); } .stats { grid-template-columns: 1fr 1fr; } .stat:last-child { grid-column: span 2; } }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>Unser Essplan</h1>
-    <div class="sub" id="weekLabel"></div>
-    <div class="stats">
-      <div class="stat"><b class="num" id="statTotal">–</b><span>Einkauf total</span></div>
-      <div class="stat"><b class="num" id="statPortion">–</b><span>pro Portion</span></div>
-      <div class="stat"><b class="num" id="statSave">–</b><span>gespart mit Aktionen</span></div>
-    </div>
-    <div class="pills" id="pills"></div>
-    <div class="sync" id="sync">Wird geladen …</div>
-  </header>
-
-  <nav>
-    <div class="tabs" role="tablist">
-      <button role="tab" id="tab-woche" data-view="woche" aria-selected="true">Woche</button>
-      <button role="tab" id="tab-rezepte" data-view="rezepte" aria-selected="false">Rezepte</button>
-      <button role="tab" id="tab-einkauf" data-view="einkauf" aria-selected="false">Einkauf</button>
-    </div>
-  </nav>
-
-  <section class="view" id="view-woche" aria-labelledby="tab-woche"></section>
-  <section class="view" id="view-rezepte" aria-labelledby="tab-rezepte" hidden></section>
-  <section class="view" id="view-einkauf" aria-labelledby="tab-einkauf" hidden></section>
-
-  <p class="footer" id="footer"></p>
-</div>
+<div class="wrap" id="app"></div>
 
 <div class="cook" id="cook" hidden role="dialog" aria-modal="true" aria-labelledby="cookTitle">
   <div class="cook-top">
@@ -200,6 +195,7 @@ details.recipe[open] summary .row::after { content: "Schliessen"; }
   </div>
   <div class="cook-main">
     <div class="cook-count num" id="cookCount"></div>
+    <div class="cook-dots" id="cookDots" aria-hidden="true"></div>
     <div class="cook-step" id="cookStep"></div>
   </div>
   <div class="cook-nav">

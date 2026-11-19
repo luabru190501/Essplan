@@ -1,5 +1,5 @@
 /* Macht die App offline nutzbar. Die Wochendaten werden immer zuerst frisch geladen. */
-const CACHE = "essplan-v1";
+const CACHE = "essplan-v2";
 const FILES = ["./", "index.html", "app.js", "daten.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
